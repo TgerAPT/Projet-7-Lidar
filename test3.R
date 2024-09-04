@@ -8,6 +8,12 @@ library(purrr)
 library(stars)
 library(terra)
 
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+dir <- getwd()
+
+file_path <- list.files(path = dir, pattern = ".laz", full.names = TRUE)
+
+
 borders <- read_sf("C:/Users/mathi/Desktop/projet troyes/cadastre_foret.gpkg")
 layers <- get_layers_metadata("wms-r", "altimetrie")
 mnt_layer <- layers[3,1] # "ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES"
@@ -28,7 +34,7 @@ plot(mnh)
 plot(mnt)
 plot(mns)
 
-las <- readLAS("C:/Users/mathi/Downloads/LHD_FXX_1003_6798_PTS_C_LAMB93_IGN69.copc.laz")
+las <- readLAS(file_path)
 plot(las)
 clip_bb = st_bbox(las)-500
 clip_las = clip_roi(las, clip_bb)
