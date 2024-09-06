@@ -7,11 +7,25 @@ library(ggplot2);sf_use_s2(FALSE) # Avoid problem with spherical geometry
 library(purrr)
 library(stars)
 library(terra)
+library(jsonlite)
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-dir <- getwd()
+test = fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")
+lien = test[["features"]][["properties"]][["url"]][1]
 
-file_path <- list.files(path = dir, pattern = ".laz", full.names = TRUE)
+download.lidar = function(x1,y1,x2,y2){
+  x = seq(x1,x2,1000)
+  y = seq(y1,y2,1000)
+for (i in x){
+  for (j in y){
+    json = fromJSON(txt = paste0("https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=",i,",",j,",",i,",",j))
+    lien = json[["features"]][["properties"]][["url"]][1]
+    try({download.file(lien,
+                       destfile = paste0("C:/Users/mathi/Desktop/",i,"_",j,".laz"))
+      })
+  }
+}
+}
+
 
 
 borders <- read_sf("C:/Users/mathi/Desktop/projet troyes/cadastre_foret.gpkg")
@@ -34,7 +48,7 @@ plot(mnh)
 plot(mnt)
 plot(mns)
 
-las <- readLAS(file_path)
+las <- readLAS("C:/Users/mathi/Downloads/LHD_FXX_0638_6971_PTS_C_LAMB93_IGN69.copc.laz")
 plot(las)
 clip_bb = st_bbox(las)-500
 clip_las = clip_roi(las, clip_bb)
@@ -42,8 +56,8 @@ plot(clip_las, color="Classification")
 # Khosravipour et al. pitfree algorithm
 thr <- c(0,2,5,10,2000)
 edg <- c(0, 1.5)
-chm <- rasterize_canopy(clip_las, 1, pitfree(thr, edg))
-sol <- rasterize_terrain(clip_las, 1, tin())
+chm <- rasterize_canopy(las, 1, pitfree(thr, edg))
+sol <- rasterize_terrain(las, 1, tin())
 plot(chm)
 plot(sol)
 plot(chm-sol)
