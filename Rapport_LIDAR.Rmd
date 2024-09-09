@@ -13,42 +13,65 @@ knitr::opts_chunk$set(echo = TRUE)
 # Introduction
 
 En gestion forestière, les technologies numériques sont de plus en plus utilisées comme piste d'optimisation du travail du forestier. La technologie LIDAR (light detection and ranging) permet la détection en amont de plusieurs paramètres : densité, essences, accessibilité, etc...\
-Le travail développé dans cet article se base sur l'emploi du LIDAR pour retrouver les cloisonnements d'exploitation
+Le travail développé dans cet article se base sur l'emploi du LIDAR pour détecter les cloisonnements d'exploitation
 
 # Matériel et Méthode
+## Origine des données
+
+## Récupération des données sur R
+Les packages utilisés sont les suivants : 
+```
+library(lidR)
+library(happign)
+library(sf)
+library(tmap); tmap_mode("view") # Set map to interactive
+library(dplyr)
+library(ggplot2);sf_use_s2(FALSE) # Avoid problem with spherical geometry
+library(purrr)
+library(stars)
+library(terra)
+library(jsonlite)
+library(pbapply)
+```
+
+## Traitement des données
+
+
+## Détection des cloisonnements sur R
+
+
+## Détection des cloisonnements sur QGIS
+
+
+*récupération des données LIDAR HD du géoservice*\
+*traitement des données sur R*\
+*export vers qgis*\
+*2 phases principales : traitement de l'image + détection de l'objet*\
 
 
 
 # Résultats
 
+## Récupération des données sur R
+
+## Traitement des données
+
+
+## Détection des cloisonnements sur R
+
+
+## Détection des cloisonnements sur QGIS
 
 
 # Discussion
 
+*taille des données*\
+*succès en fonction du type de forêt*\
+**\
+**\
+**\
 
 
 # Conclusion
 
 
-
-
-
-
-# truc de base 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-```{r cars}
-summary(cars)
-```
-
- Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
