@@ -51,7 +51,7 @@ download.lidar = function(x1, y1, x2, y2) {
           
           # Téléchargement du fichier .laz avec mode binaire
           download.file(lien, 
-                        destfile = paste0("C:/Users/Thomas/Documents/R3A/Projet_7/", i, "_", j, ".laz"),
+                        destfile = paste0("dir", i, "_", j, ".laz"),
                         mode = "wb")  # "wb" pour mode binaire
           
           print(paste("Saved file:", paste0(i, "_", j, ".laz")))
