@@ -97,8 +97,9 @@ test = segment_shapes(LAS_soil, shp_hline(th1 = 100, th2 = 2, k = 3), attribute 
 
 plot(test, color = "Shape")
 
-
-
+#test pour sol
+dtm_tin <-rasterize_terrain(laz, res = 1, algorithm = tin())
+plot_dtm3d(dtm_tin, bg="black")
 
 
 
