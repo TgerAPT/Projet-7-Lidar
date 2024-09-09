@@ -66,6 +66,11 @@ download.lidar = function(x1, y1, x2, y2) {
   }
 }
 
+cut.area = function(las, liste){
+  clip = clip_rectangle(las, liste[1], liste[2], liste[3], liste[4])
+  return(clip)
+}
+
 
 coord <- draw.area()
 download.lidar(coord[1],coord[2],coord[3],coord[4])
