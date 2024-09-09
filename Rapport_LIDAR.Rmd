@@ -3,8 +3,7 @@ title: "Télédétection des cloisonnements d'exploitation forestière à partir
 author: "Armange Tristan, Gerval Thomas, Magnier Mathieu, Marie Gabriel"
 date: "2024-09-09"
 output: pdf_document
-bibliography: references.bib
-link-citations: TRUE
+
 ---
 
 ```{r setup, include=FALSE}
@@ -13,13 +12,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-
+En gestion forestière, les technologies numériques sont de plus en plus utilisées comme piste d'optimisation du travail du forestier. La technologie LIDAR (light detection and ranging) permet la détection en amont de plusieurs paramètres : densité, essences, accessibilité, etc...\
+Le travail développé dans cet article se base sur l'emploi du LIDAR pour retrouver les cloisonnements d'exploitation
 
 # Matériel et Méthode
 
+
+
 # Résultats
 
+
+
 # Discussion
+
+
 
 # Conclusion
 
