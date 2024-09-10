@@ -65,8 +65,8 @@ download.lidar = function(x1, y1, x2, y2) {
   }
 }
 
-cut.area = function(las, liste){
-  clip = clip_rectangle(las, liste[1], liste[2], liste[3], liste[4])
+cut.area = function(laz, liste){
+  clip = clip_rectangle(laz, liste[1], liste[2], liste[3], liste[4])
   return(clip)
 }
 
@@ -81,9 +81,6 @@ laz_dir <- list.files(dir,
 laz <- readLAS(laz_dir)
 laz <- cut.area(laz, coord)
 plot(laz)
-
-
-las <- laz
 
 laz_soil <- lidR::filter_ground(laz)
 mycsf <- csf(TRUE, 1, 1, time_step = 1)
@@ -110,11 +107,11 @@ plot(mnt_tin)
 plot_dtm3d(mnt_tin)
 writeRaster(mnt_tin,"mnt_tin2.tif")
 
-mnt_knnidw <- rasterize_terrain(las, 1, knnidw())
+mnt_knnidw <- rasterize_terrain(laz, 1, knnidw())
 plot(mnt_knnidw)
 writeRaster(mnt_knnidw,"mnt_knnidw.tif")
 
-mnt_kriging <- rasterize_terrain(las, 1, kriging())
+mnt_kriging <- rasterize_terrain(laz, 1, kriging())
 plot(mnt_kriging)
 writeRaster(mnt_kriging,"mnt_kriging.tif")
 
@@ -131,9 +128,9 @@ laz_filtered <- filter_poi(laz_norm, Z >= 0 & Z <= 0.2)
 mnt_filtered <- rasterize_terrain(laz_filtered, 1, tin())
 plot(laz_filtered)
 
-writeRaster(mnt_filtered, "las_filtered.tif")
-mnt_filtered2 <- rasterize_canopy(las, 1, pitfree(thr, edg))
-writeRaster(mnt_filtered2,"las_filtered2.tif")
+writeRaster(mnt_filtered, "laz_filtered.tif")
+mnt_filtered2 <- rasterize_canopy(laz, 1, pitfree(thr, edg))
+writeRaster(mnt_filtered2,"laz_filtered2.tif")
 
 
 
@@ -196,7 +193,7 @@ cloisonnements <- detect_cloisonnements(laz_norm)
 
 
 writeRaster(dtm_tin,"blackandwhite_sol.tif")
-mnh <- rasterize_terrain(las, 1, tin())
+mnh <- rasterize_terrain(laz, 1, tin())
 
 
 carte <- as.numeric(laz)
@@ -231,18 +228,18 @@ mnh[mnh > 50] <- 40 # Remove height more than 50m
 plot(mnh)
 plot(mnt)
 plot(mns)
-las <- laz
 
-las <- readLAS("C:/Users/mathi/Downloads/LHD_FXX_0638_6971_PTS_C_LAMB93_IGN69.copc.laz")
-#plot(las)
-clip_bb = st_bbox(las)
-clip_las = clip_roi(las, clip_bb)
-#plot(clip_las, color="Classification")
+
+
+#plot(laz)
+clip_bb <- st_bbox(laz)
+clip_laz <- clip_roi(laz, clip_bb)
+#plot(clip_laz, color="Classification")
 # Khosravipour et al. pitfree algorithm
 thr <- c(0,2,5,10,2000)
 edg <- c(0, 1.5)
-chm <- rasterize_canopy(las, 1, pitfree(thr, edg))
-sol <- rasterize_terrain(las, 1, tin())
+chm <- rasterize_canopy(laz, 1, pitfree(thr, edg))
+sol <- rasterize_terrain(laz, 1, tin())
 plot(chm)
 plot_dtm3d(sol)
 test_mnh <- chm-sol
