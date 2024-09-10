@@ -56,3 +56,9 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   
   return(lines_final)
 }
+
+
+
+Erreur : 'filter' n’est un object exporté depuis 'namespace:imager'
+De plus : Message d'avis :
+There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
