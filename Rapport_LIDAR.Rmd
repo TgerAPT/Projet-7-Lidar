@@ -12,8 +12,12 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 # Introduction
 
-En gestion forestière, les technologies numériques sont de plus en plus utilisées comme piste d'optimisation du travail du forestier. La technologie LIDAR (light detection and ranging) permet la détection en amont de plusieurs paramètres : densité, essences, accessibilité, etc...\
-Le travail développé dans cet article se base sur l'emploi du LIDAR pour détecter les cloisonnements d'exploitation
+Les cloisonnements sont des outils sylvicoles important pour lutter contre le tassement des sols et préserver la productivité des sols forestiers. En effet, en fonction de la texture su sol, le tassement peut être plus ou moins important lors du passage des engins et ainsi réduire la porosité et donc la réserve utile en eau du sol. Cependant, il n’existe pas de carte accessible de ces cloisonnements lorsqu’ils existent. Ceux-ci peuvent alors être perdus avec le temps. L’utilisation du LiDAR (Light Detection And Ranging) semble être une solution. Le LiDAR consiste en une mesure de distance par détection de la lumière *(IGN, 2021)*. Actuellement, en France un projet de LiDAR (LiDAR HD), vise à cartographier l’ensemble du territoire avec une haute densité (10 points par m²) *(IGN, 2021)*, pour le moment 2/3 du territoire a été survolé. Ainsi cela mène à la question de : Comment déterminer les cloisonnements grâce à des données LiDAR.
+
+IGN. 2021. Lidar aéroporté : des mesures de précision - Institut - IGN. https://www.ign.fr/institut/kiosque/lidar-aeroporte-des-mesures-de-precision (Consulté le 10 septembre 2024). 
+IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Institut - IGN. https://www.ign.fr/institut/lidar-hd-vers-une-nouvelle-cartographie-3d-du-territoire (Consulté le 10 septembre 2024). 
+
+
 
 # Matériel et Méthode
 ## Origine des données
