@@ -191,11 +191,10 @@ Une autre piste a été envisagée dans la mesure ou l'automatisation de la dét
 
 # Discussion
 
-*taille des données*\
-*succès en fonction du type de forêt*\
-*ancien passage de véhicules*\
-**\
-**\
+La principale contrainte relative à ces données est leur taille importante. Il est pour l'instant inenvisageable de travailler à l'échelle de massifs forestiers entiers.\
+A l'heure actuelle la détection des cloisonnements a été testée sur des morceaux de forêts de différentes natures(plantations ou non, feuillus ou résineux, peuplements âgés ou jeunes,...) sans pour autant être exhaustive. Une étude supplémentaire serait nécessaire pour déterminer les facteurs nécessaires à une détection de qualité. Pour l'instant l'absence de détection n'exclue pas la présence des cloisonnements.\
+En plus des cloisonnements actuels, une approche supplémentaire sur la présence d'anciens cloisonnements ou passage de véhicules serait une information importante à donner au gestionnaire.\
+*mentionner le travail à l'echelle du terrain ou les cloiso sont deja visibles = quel interet à l'approche aerienne si on ne peut pas visualiser des grands ensembles.*
 
 
 # Conclusion
