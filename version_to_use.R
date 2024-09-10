@@ -105,9 +105,10 @@ plot (density)
 ################################################################################
 #comparaison d'algo : aucune différence 
 
-mnt_tin <- rasterize_terrain(las, 1, tin())
+mnt_tin <- rasterize_terrain(laz, 1, tin())
 plot(mnt_tin)
-writeRaster(mnt_tin,"mnt_tin.tif")
+plot_dtm3d(mnt_tin)
+writeRaster(mnt_tin,"mnt_tin2.tif")
 
 mnt_knnidw <- rasterize_terrain(las, 1, knnidw())
 plot(mnt_knnidw)
@@ -123,36 +124,38 @@ plot (test_1)
 test_2 <- mnt_tin-mnt_kriging
 plot (test_2)
 ##################################################################################
-las_norm <- normalize_height(las, mnt)
-las_filtered <- filter_poi(las_norm, Z >= 0 & Z <= 0.2)
-mnt_filtered <- rasterize_terrain(las_filtered, 1, tin())
-plot(las_filtered)
+laz_norm <- normalize_height(laz, mnt_tin)
+plot(laz_norm)
+
+laz_filtered <- filter_poi(laz_norm, Z >= 0 & Z <= 0.2)
+mnt_filtered <- rasterize_terrain(laz_filtered, 1, tin())
+plot(laz_filtered)
+
 writeRaster(mnt_filtered, "las_filtered.tif")
 mnt_filtered2 <- rasterize_canopy(las, 1, pitfree(thr, edg))
 writeRaster(mnt_filtered2,"las_filtered2.tif")
 
 
-las_file <- laz
-las <- laz
-detect_cloisonnements <- function(las, resolution = 1, threshold = 0.1, output_file = "cloisonnements.gpkg") {
+
+detect_cloisonnements <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
   
-  if (is.null(las) || npoints(las) == 0) {
-    stop("Le fichier LAS est vide ou n'a pas été chargé correctement.")
+  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
+    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
   }
   
   # 1. Calculer la densité des points
-  density <- grid_density(las, res = resolution)
+  density <- grid_density(laz_norm, res = resolution)
   
   # 2. Calculer le nombre de retours
-  returns <- grid_metrics(las, ~length(Z), res = resolution)
+  returns <- grid_metrics(laz_norm, ~length(Z), res = resolution)
   names(returns) <- "num_returns"
   
   #3. MNH
-  chm <- grid_canopy(las, res = resolution, algorithm = pitfree())
-  names(chm) <- "chm_height"
+  mnh <- grid_canopy(laz_norm, res = resolution, algorithm = pitfree())
+  names(mnh) <- "mnh_height"
   
   # 4. Empiler les rasters pour les combiner
-  combined_stack <- raster::stack(density, returns, chm)
+  combined_stack <- raster::stack(density, returns, mnh)
   
   # Convertir en data frame pour traitement
   combined_df <- as.data.frame(combined_stack, xy = TRUE)
@@ -160,21 +163,21 @@ detect_cloisonnements <- function(las, resolution = 1, threshold = 0.1, output_f
   # Vérifier la présence de valeurs NA et appliquer na.rm = TRUE
   combined_df <- na.omit(combined_df)  # Suppression des lignes avec des NA
   
-  # 5. Détecter les zones à faible densité, faible nombre de retours et faible CHM
+  # 5. Détecter les zones à faible densité, faible nombre de retours et faible hauteur
   print(combined_df)
   combined_df$low_density <- ifelse(combined_df$density < quantile(combined_df$density, threshold, na.rm = TRUE), 1, 0)
-  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE)-15, 1, 0)
-  combined_df$low_chm <- ifelse(combined_df$chm_height < quantile(combined_df$chm_height, threshold, na.rm = TRUE)-6, 1, 0)
+  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE)-6, 1, 0)
+  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE)-5, 1, 0)
   
   # 6. Détecter les cloisonnements
-  combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_chm == 1, 1, 0)
+  combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_mnh == 1, 1, 0)
   
   # 7. Filtrer les zones de cloisonnements
   cloisonnements_points <- combined_df[combined_df$cloisonnement == 1, ]
-  print("i")
+  
   # 8. Convertir en objet spatial
   if (nrow(cloisonnements_points) > 0) {
-    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(las))
+    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz))
     
     # 9. Exporter au format GPKG
     st_write(cloisonnements_sf, output_file, driver = "GPKG")
@@ -188,17 +191,9 @@ detect_cloisonnements <- function(las, resolution = 1, threshold = 0.1, output_f
 
 
 # Exemple d'utilisation
-cloisonnements <- detect_cloisonnements(las)
+cloisonnements <- detect_cloisonnements(laz_norm)
 
 
-
-
-
-############################# Gab ###########################
-dtm_tin <-rasterize_terrain(laz, res = 1, algorithm = tin())
-plot_dtm3d(dtm_tin, bg="black")
-
-###################### tri points entre 0 20 cm ################
 
 writeRaster(dtm_tin,"blackandwhite_sol.tif")
 mnh <- rasterize_terrain(las, 1, tin())
