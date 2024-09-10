@@ -19,77 +19,66 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   flat_areas <- slope < slope_threshold
   print(paste("Dimensions des zones planes:", paste(dim(flat_areas), collapse = "x")))
   
-  # 4. Convertir en image pour le traitement
-  img_array <- as.array(flat_areas)
-  print(paste("Dimensions de l'image array:", paste(dim(img_array), collapse = "x")))
+  # 4. Convertir en matrice pour le traitement
+  img_matrix <- as.matrix(flat_areas)
+  print(paste("Dimensions de la matrice d'image:", paste(dim(img_matrix), collapse = "x")))
   
   # 5. Détection de contours simple
-  dx <- diff(img_array, differences = 1, lag = 1, dim = 2)
-  dy <- diff(img_array, differences = 1, lag = 1, dim = 1)
-  
-  print(paste("Dimensions de dx:", paste(dim(dx), collapse = "x")))
-  print(paste("Dimensions de dy:", paste(dim(dy), collapse = "x")))
-  
-  # Assurez-vous que dx et dy ont la même taille
-  min_rows <- min(nrow(dx), nrow(dy))
-  min_cols <- min(ncol(dx), ncol(dy))
-  
-  dx <- dx[1:min_rows, 1:min_cols]
-  dy <- dy[1:min_rows, 1:min_cols]
-  
-  print(paste("Nouvelles dimensions de dx:", paste(dim(dx), collapse = "x")))
-  print(paste("Nouvelles dimensions de dy:", paste(dim(dy), collapse = "x")))
-  
-  edges <- sqrt(dx^2 + dy^2)
-  print(paste("Dimensions des contours:", paste(dim(edges), collapse = "x")))
-  
-  # 6. Binarisation des contours
-  edges_bin <- edges > quantile(edges, 0.9, na.rm = TRUE)
-  
-  # 7. Extraction des coordonnées des pixels de contour
-  edge_coords <- which(edges_bin > 0, arr.ind = TRUE)
-  print(paste("Nombre de points de contour:", nrow(edge_coords)))
-  
-  # 8. Création des lignes à partir des coordonnées des contours
-  if (nrow(edge_coords) > 1) {
-    lines_sf <- st_sfc(lapply(1:(nrow(edge_coords)-1), function(i) {
-      st_linestring(matrix(c(edge_coords[i,2], edge_coords[i,1],
-                             edge_coords[i+1,2], edge_coords[i+1,1]), ncol = 2, byrow = TRUE))
-    }), crs = st_crs(laz_norm))
+  if (nrow(img_matrix) > 1 && ncol(img_matrix) > 1) {
+    dx <- diff(img_matrix, differences = 1, lag = 1, dim = 2)
+    dy <- diff(img_matrix, differences = 1, lag = 1, dim = 1)
     
-    # 9. Filtrer les lignes trop courtes
-    lines_sf <- lines_sf[st_length(lines_sf) > line_length]
+    print(paste("Dimensions de dx:", paste(dim(dx), collapse = "x")))
+    print(paste("Dimensions de dy:", paste(dim(dy), collapse = "x")))
     
-    # 10. Fusionner les lignes proches
-    lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
-    lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
+    # Assurez-vous que dx et dy ont la même taille
+    min_rows <- min(nrow(dx), nrow(dy))
+    min_cols <- min(ncol(dx), ncol(dy))
     
-    # 11. Nettoyer et simplifier les lignes finales
-    lines_final <- st_simplify(lines_merged, dTolerance = resolution)
+    dx <- dx[1:min_rows, 1:min_cols]
+    dy <- dy[1:min_rows, 1:min_cols]
     
-    # 12. Exporter au format GPKG
-    st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
-    message("Cloisonnements exportés vers ", output_file)
+    print(paste("Nouvelles dimensions de dx:", paste(dim(dx), collapse = "x")))
+    print(paste("Nouvelles dimensions de dy:", paste(dim(dy), collapse = "x")))
     
-    return(lines_final)
+    edges <- sqrt(dx^2 + dy^2)
+    print(paste("Dimensions des contours:", paste(dim(edges), collapse = "x")))
+    
+    # 6. Binarisation des contours
+    edges_bin <- edges > quantile(edges, 0.9, na.rm = TRUE)
+    
+    # 7. Extraction des coordonnées des pixels de contour
+    edge_coords <- which(edges_bin > 0, arr.ind = TRUE)
+    print(paste("Nombre de points de contour:", nrow(edge_coords)))
+    
+    # 8. Création des lignes à partir des coordonnées des contours
+    if (nrow(edge_coords) > 1) {
+      lines_sf <- st_sfc(lapply(1:(nrow(edge_coords)-1), function(i) {
+        st_linestring(matrix(c(edge_coords[i,2], edge_coords[i,1],
+                               edge_coords[i+1,2], edge_coords[i+1,1]), ncol = 2, byrow = TRUE))
+      }), crs = st_crs(laz_norm))
+      
+      # 9. Filtrer les lignes trop courtes
+      lines_sf <- lines_sf[st_length(lines_sf) > line_length]
+      
+      # 10. Fusionner les lignes proches
+      lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
+      lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
+      
+      # 11. Nettoyer et simplifier les lignes finales
+      lines_final <- st_simplify(lines_merged, dTolerance = resolution)
+      
+      # 12. Exporter au format GPKG
+      st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
+      message("Cloisonnements exportés vers ", output_file)
+      
+      return(lines_final)
+    } else {
+      message("Aucune ligne détectée. Vérifiez les paramètres ou les données d'entrée.")
+      return(NULL)
+    }
   } else {
-    message("Aucune ligne détectée. Vérifiez les paramètres ou les données d'entrée.")
+    message("L'image est trop petite pour détecter des contours.")
     return(NULL)
   }
 }
-
-
-
-[1] "Dimensions du MNT: 1235x1605x1"
-[1] "Dimensions de la pente: 1235x1605x1"
-[1] "Dimensions des zones planes: 1235x1605x1"
-[1] "Dimensions de l'image array: 1235x1605x1"
-[1] "Dimensions de dx: "
-[1] "Dimensions de dy: "
-Erreur dans 1:min_rows : le résultat serait un vecteur trop long
-De plus : Messages d'avis :
-1: There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
-2: Dans min(nrow(dx), nrow(dy)) :
-  aucun argument trouvé pour min ; Inf est renvoyé
-3: Dans min(ncol(dx), ncol(dy)) :
-  aucun argument trouvé pour min ; Inf est renvoyé
