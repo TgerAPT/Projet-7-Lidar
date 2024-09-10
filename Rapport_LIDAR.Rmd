@@ -17,28 +17,36 @@ Le travail développé dans cet article se base sur l'emploi du LIDAR pour déte
 
 # Matériel et Méthode
 ## Origine des données
+La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz
 
 ## Récupération des données sur R
+### Packages
+La plus grande partie du travail a été effectué sur Rstudio. Le traitement s'est appuyé sur de nombreuses fonctions déjà disponibles dans des packages adaptés aux données manipulées.\
 Les packages utilisés sont les suivants : 
-
 ```{r, results = "hide"}
-library(dplyr)
+library(dplyr)  # Manipulation de données tabulée  [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)
+library(ggplot2)  # Création de graphiques *Hadley Wickham*
+library(happign)  # Récupération de données IGN *Paul Carteron*
+library(jsonlite)  # Lecture de données JSON *Jeroen Ooms*
+library(lidR)  # Manipulation des données LiDAR *David Auty*
+library(mapedit) # outil drawfeatures
+library(purrr)  # Outils de programmation fonctionnelle [*auteurs*](https://purrr.tidyverse.org/authors.html#citation)
+library(sf); sf_use_s2(FALSE)  # Manipulation des vecteurs géospatialisés *Edzer Pebesma* avec correction des erreurs de géométrie sphérique
+library(stars)  # Manipulation de tables de données spatialisées *Data cubes* *Edzer Pebesma*
+library(terra)  #Manipulation de données spatialisées *Robert Hijmans*
+library(tmap); tmap_mode("view")  # Création de cartes dynamiques *Martijn Tennekes*
 ``` 
-Manipulation de données tabulées [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)\
-`library(ggplot2)` Création de graphiques *Hadley Wickham* `sf_use_s2(FALSE)` corrige les erreurs de géométrie sphérique\
-`library(happign)` Récupération de données IGN *Paul Carteron*\
-`library(jsonlite)` Lecture de données JSON *Jeroen Ooms*\
-`library(lidR)` Manipulation des données LiDAR *David Auty*\
-`library(purrr)` Outils de programmation fonctionnelle [*auteurs*](https://purrr.tidyverse.org/authors.html#citation)\
-`library(sf)` Manipulation des vecteurs géospatialisés *Edzer Pebesma*\
-`library(stars)` Manipulation de tables de données spatialisées *Data cubes* *Edzer Pebesma*\
-`library(terra)` Manipulation de données spatialisées *Robert Hijmans*\
-`library(tmap)` Création de cartes *Martijn Tennekes* `tmap_mode("view")` permet de créer des cartes dynamiques\
 
-```{r, echo = FALSE}
+### Chemin d'accès 
+Une première manipulation simple permet d'automatiser les chemins d'accès de l'utilsateurs et éviter des erreurs de lecture par la suite : 
+```{r, results = "hide"}
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 dir <- getwd()
+```
 
+### Fonctions
+La première étape consiste à récupérer les coordonnées de la zone étudiée. L'utilisation de la fonction drawFeatures() du package mapedit permet de demander à l'utilsateur d'encadrer directement sur une carte interactive la zone souhaitée.
+```{r}
 draw.area = function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
   y1 = min(zone[, 2])
@@ -49,6 +57,107 @@ draw.area = function(){
 }
 ```
 
+
+```{r}
+download.lidar = function(x1, y1, x2, y2) {
+  # Créer une séquence de coordonnées avec un pas de 10000
+  x = seq(x1, x2, 10000)
+  y = seq(y1, y2, 10000)
+  
+  # Boucle à travers toutes les combinaisons de x et y
+  for (i in x) {
+    for (j in y) {
+      # Construire l'URL pour obtenir les données JSON
+      json_url <- paste0("https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=", 
+                         i, ",", j, ",", i, ",", j)
+      print(paste("Fetching JSON from:", json_url))
+      
+      # Essayer de récupérer les données JSON
+      tryCatch({
+        json = fromJSON(txt = json_url)
+        
+        # Récupérer le lien du fichier .laz à partir des propriétés du JSON
+        lien = json[["features"]][["properties"]][["url"]][1]
+        
+        if (!is.null(lien)) {  # Vérifier que le lien n'est pas nul
+          print(paste("Downloading .laz file from:", lien))
+          
+          # Téléchargement du fichier .laz avec mode binaire
+          download.file(lien, 
+                        destfile = paste0("dir", i, "_", j, ".laz"),
+                        mode = "wb")  # "wb" pour mode binaire
+          
+          print(paste("Saved file:", paste0(i, "_", j, ".laz")))
+        } else {
+          print("No valid link found in the JSON response.")
+        }
+      }, error = function(e) {
+        print(paste("Error fetching or downloading data for bbox:", i, j))
+        print(e)  # Affiche l'erreur rencontrée
+      })
+    }
+  }
+}
+```
+
+```{r}
+cut.area = function(laz, liste){
+  clip = clip_rectangle(laz, liste[1], liste[2], liste[3], liste[4])
+  return(clip)
+}
+
+detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
+  
+  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
+    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
+  }
+  
+  # 1. Calculer la densité des points
+  density <- grid_density(laz_norm, res = resolution)
+  
+  # 2. Calculer le nombre de retours
+  returns <- grid_metrics(laz_norm, ~length(Z), res = resolution)
+  names(returns) <- "num_returns"
+  
+  #3. MNH
+  mnh <- grid_canopy(laz_norm, res = resolution, algorithm = pitfree())
+  names(mnh) <- "mnh_height"
+  
+  # 4. Empiler les rasters pour les combiner
+  combined_stack <- raster::stack(density, returns, mnh)
+  
+  # Convertir en data frame pour traitement
+  combined_df <- as.data.frame(combined_stack, xy = TRUE)
+  
+  # Vérifier la présence de valeurs NA et appliquer na.rm = TRUE
+  combined_df <- na.omit(combined_df)  # Suppression des lignes avec des NA
+  
+  # 5. Détecter les zones à faible densité, faible nombre de retours et faible hauteur
+  print(combined_df)
+  combined_df$low_density <- ifelse(combined_df$density < quantile(combined_df$density, threshold, na.rm = TRUE), 1, 0)
+  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE)-6, 1, 0)
+  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE)-5, 1, 0)
+  
+  # 6. Détecter les cloisonnements
+  combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_mnh == 1, 1, 0)
+  
+  # 7. Filtrer les zones de cloisonnements
+  cloisonnements_points <- combined_df[combined_df$cloisonnement == 1, ]
+  
+  # 8. Convertir en objet spatial
+  if (nrow(cloisonnements_points) > 0) {
+    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz))
+    
+    # 9. Exporter au format GPKG
+    st_write(cloisonnements_sf, output_file, driver = "GPKG")
+    message("Cloisonnements exportés vers ", output_file)
+  } else {
+    message("Aucun cloisonnement détecté.")
+  }
+  
+  return(cloisonnements_sf)
+}
+```
 
 ## Traitement des données
 
