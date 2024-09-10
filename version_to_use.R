@@ -183,7 +183,7 @@ chm <- grid_canopy(laz, res = 1, pitfree())
 plot(chm)
 density <- grid_density(laz, res = 1)
 plot (density)
-################################################################################
+
 #comparaison d'algo : aucune différence 
 
 mnt_tin <- rasterize_terrain(laz, 1, tin())
@@ -204,7 +204,7 @@ plot (test_1)
 
 test_2 <- mnt_tin-mnt_kriging
 plot (test_2)
-##################################################################################
+
 laz_norm <- normalize_height(laz, mnt_tin)
 plot(laz_norm)
 
