@@ -164,10 +164,6 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, min_length 
 }
 
 # Import data ----
-
-lien <- fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")
-lien <- lien[["features"]][["properties"]][["url"]][1]
-
 coord <- draw.area()
 download.lidar(coord[1],coord[2],coord[3],coord[4])
 
