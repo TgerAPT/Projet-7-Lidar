@@ -12,7 +12,7 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   print(paste("Dimensions du MNT:", paste(dim(mnt), collapse = "x")))
   
   # 2. Calculer la pente
-  slope <- terrain(mnt, opt = "slope", unit = "degrees")
+  slope <- terra::terrain(mnt, v = "slope", unit = "degrees")
   print(paste("Dimensions de la pente:", paste(dim(slope), collapse = "x")))
   
   # 3. Identifier les zones planes (potentiels cloisonnements)
@@ -59,7 +59,13 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
       }), crs = st_crs(laz_norm))
       
       # 9. Filtrer les lignes trop courtes
-      lines_sf <- lines_sf[st_length(lines_sf) > line_length]
+      lines_length <- st_length(lines_sf)
+      lines_sf <- lines_sf[as.numeric(lines_length) > line_length]
+      
+      if (length(lines_sf) == 0) {
+        message("Aucune ligne ne dépasse la longueur minimale. Ajustez le paramètre line_length ou vérifiez les données d'entrée.")
+        return(NULL)
+      }
       
       # 10. Fusionner les lignes proches
       lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
@@ -82,19 +88,3 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
     return(NULL)
   }
 }
-
-
-[1] "Dimensions du MNT: 1235x1605x1"
-[1] "Dimensions de la pente: 1235x1605x1"
-[1] "Dimensions des zones planes: 1235x1605x1"
-[1] "Dimensions de la matrice d'image: 1235x1605"
-[1] "Dimensions de dx: 1234x1605"
-[1] "Dimensions de dy: 1234x1605"
-[1] "Nouvelles dimensions de dx: 1234x1605"
-[1] "Nouvelles dimensions de dy: 1234x1605"
-[1] "Dimensions des contours: 1234x1605"
-[1] "Nombre de points de contour: 77024"
-Erreur dans Ops.units(st_length(lines_sf), line_length) : 
-  both operands of the expression should be "units" objects
-De plus : Message d'avis :
-There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
