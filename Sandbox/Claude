@@ -25,23 +25,7 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   
   # 5. Détection de contours simple
   if (nrow(img_matrix) > 1 && ncol(img_matrix) > 1) {
-    dx <- diff(img_matrix, differences = 1, lag = 1, dim = 2)
-    dy <- diff(img_matrix, differences = 1, lag = 1, dim = 1)
-    
-    print(paste("Dimensions de dx:", paste(dim(dx), collapse = "x")))
-    print(paste("Dimensions de dy:", paste(dim(dy), collapse = "x")))
-    
-    # Assurez-vous que dx et dy ont la même taille
-    min_rows <- min(nrow(dx), nrow(dy))
-    min_cols <- min(ncol(dx), ncol(dy))
-    
-    dx <- dx[1:min_rows, 1:min_cols]
-    dy <- dy[1:min_rows, 1:min_cols]
-    
-    print(paste("Nouvelles dimensions de dx:", paste(dim(dx), collapse = "x")))
-    print(paste("Nouvelles dimensions de dy:", paste(dim(dy), collapse = "x")))
-    
-    edges <- sqrt(dx^2 + dy^2)
+    edges <- edge_detection(img_matrix)
     print(paste("Dimensions des contours:", paste(dim(edges), collapse = "x")))
     
     # 6. Binarisation des contours
@@ -53,10 +37,7 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
     
     # 8. Création des lignes à partir des coordonnées des contours
     if (nrow(edge_coords) > 1) {
-      lines_sf <- st_sfc(lapply(1:(nrow(edge_coords)-1), function(i) {
-        st_linestring(matrix(c(edge_coords[i,2], edge_coords[i,1],
-                               edge_coords[i+1,2], edge_coords[i+1,1]), ncol = 2, byrow = TRUE))
-      }), crs = st_crs(laz_norm))
+      lines_sf <- create_lines_from_coords(edge_coords, resolution, st_crs(laz_norm))
       
       # 9. Filtrer les lignes trop courtes
       lines_length <- st_length(lines_sf)
@@ -89,18 +70,42 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   }
 }
 
-[1] "Dimensions du MNT: 1235x1605x1"
-[1] "Dimensions de la pente: 1235x1605x1"
-[1] "Dimensions des zones planes: 1235x1605x1"
-[1] "Dimensions de la matrice d'image: 1235x1605"
-[1] "Dimensions de dx: 1234x1605"
-[1] "Dimensions de dy: 1234x1605"
-[1] "Nouvelles dimensions de dx: 1234x1605"
-[1] "Nouvelles dimensions de dy: 1234x1605"
-[1] "Dimensions des contours: 1234x1605"
-[1] "Nombre de points de contour: 77024"
-Writing layer `cloisonnements_norm' to data source `cloisonnements_norm.gpkg' using driver `GPKG'
-Writing 2 features with 0 fields and geometry type Line String.
-Cloisonnements exportés vers cloisonnements_norm.gpkg
-Message d'avis :
-There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
+# Fonction auxiliaire pour la détection des contours
+edge_detection <- function(img_matrix) {
+  dx <- diff(img_matrix, differences = 1, lag = 1, dim = 2)
+  dy <- diff(img_matrix, differences = 1, lag = 1, dim = 1)
+  
+  # Assurez-vous que dx et dy ont la même taille
+  min_rows <- min(nrow(dx), nrow(dy))
+  min_cols <- min(ncol(dx), ncol(dy))
+  
+  dx <- dx[1:min_rows, 1:min_cols]
+  dy <- dy[1:min_rows, 1:min_cols]
+  
+  edges <- sqrt(dx^2 + dy^2)
+  return(edges)
+}
+
+# Fonction auxiliaire pour créer des lignes à partir des coordonnées
+create_lines_from_coords <- function(edge_coords, resolution, crs) {
+  # Trier les coordonnées pour une meilleure connexion des points
+  edge_coords <- edge_coords[order(edge_coords[,1], edge_coords[,2]),]
+  
+  # Créer des groupes de points proches
+  groups <- cumsum(c(1, sqrt(diff(edge_coords[,1])^2 + diff(edge_coords[,2])^2) > 1))
+  
+  # Créer des lignes pour chaque groupe
+  lines_sf <- st_sfc(lapply(split(edge_coords, groups), function(group) {
+    if (nrow(group) > 1) {
+      coords <- group[, 2:1] * resolution  # Convertir en coordonnées réelles
+      st_linestring(coords)
+    } else {
+      NULL
+    }
+  }), crs = crs)
+  
+  # Filtrer les lignes NULL
+  lines_sf <- lines_sf[!sapply(lines_sf, is.null)]
+  
+  return(lines_sf)
+}
