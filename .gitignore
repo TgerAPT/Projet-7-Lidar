@@ -50,3 +50,7 @@ rsconnect/
 
 # Lidar
 .laz
+
+#Qgis
+.tif
+.gpkg
