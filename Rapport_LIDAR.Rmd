@@ -31,7 +31,6 @@ library(purrr)
 library(stars)
 library(terra)
 library(jsonlite)
-library(pbapply)
 ```
 
 ## Traitement des données
