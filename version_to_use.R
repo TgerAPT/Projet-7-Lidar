@@ -1,19 +1,46 @@
-library(lidR)
+# About this code ----
+
+# Projet pédagogique sur l'utilisation des données LIDAR récentes pour retrouver
+# les cloisonnements sur un peuplement
+
+# Auteur : Armange Tristan, Gerval Thomas, Magnier Mathieu, Marie Gabriel
+# Contact : tristan.armange@agroparistech.fr
+# Contact : thomas.gerval@agroparistech.fr
+# Contact : mathieu.magnier@agroparistech.fr
+# Contact : gabriel.marie@agroparistech.fr
+
+# Dernière mise à jour : 12 septembre 2024
+
+# Package installation ----
+
+install.packages("happign")
+install.packages("sf")
+install.packages("tmap")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("purr")
+install.packages("stars")
+install.packages("terra")
+install.packages("jsonlite")
+
+# Librairies ----
+
 library(happign)
-library(sf)
-library(tmap); tmap_mode("view") # Set map to interactive
+library(sf)  # for vector
+library(tmap); tmap_mode("view")  # Set map to interactive
 library(dplyr)
-library(ggplot2);sf_use_s2(FALSE) # Avoid problem with spherical geometry
+library(ggplot2);sf_use_s2(FALSE)  # Avoid problem with spherical geometry
 library(purrr)
 library(stars)
-library(terra)
-library(jsonlite)
+library(terra)  # for raster
+library(jsonlite)  # to manipulate .json
+
+# Set working directory ----
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 dir <- getwd()
 
-lien <- fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")
-lien <- lien[["features"]][["properties"]][["url"]][1]
+# Fonctions ----
 
 draw.area = function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
@@ -23,7 +50,6 @@ draw.area = function(){
   x2 = max(zone[, 1])
   return(c(x1,y1,x2,y2))
 }
-
 
 download.lidar = function(x1, y1, x2, y2) {
   # Créer une séquence de coordonnées avec un pas de 10000
@@ -70,71 +96,7 @@ cut.area = function(laz, liste){
   return(clip)
 }
 
-
-coord <- draw.area()
-download.lidar(coord[1],coord[2],coord[3],coord[4])
-
-laz_dir <- list.files(dir, 
-                  full.names = T, 
-                  pattern= '.laz')
-
-laz <- readLAS(laz_dir)
-laz <- cut.area(laz, coord)
-plot(laz)
-
-laz_soil <- lidR::filter_ground(laz)
-mycsf <- csf(TRUE, 1, 1, time_step = 1)
-laz_soil <- classify_ground(laz, mycsf)
-laz_soil <-lidR::filter_poi(laz_soil, Classification == 2L & ReturnNumber > 5L)
-
-plot(laz_soil)
-
-test = segment_shapes(LAS_soil, shp_hline(th1 = 100, th2 = 2, k = 3), attribute = "Shape")
-
-plot(test, color = "Shape")
-
-ground <- classify_ground(laz, csf())
-plot(ground, color = "Classification")
-chm <- grid_canopy(laz, res = 1, pitfree())
-plot(chm)
-density <- grid_density(laz, res = 1)
-plot (density)
-################################################################################
-#comparaison d'algo : aucune différence 
-
-mnt_tin <- rasterize_terrain(laz, 1, tin())
-plot(mnt_tin)
-plot_dtm3d(mnt_tin)
-writeRaster(mnt_tin,"mnt_tin2.tif")
-
-mnt_knnidw <- rasterize_terrain(laz, 1, knnidw())
-plot(mnt_knnidw)
-writeRaster(mnt_knnidw,"mnt_knnidw.tif")
-
-mnt_kriging <- rasterize_terrain(laz, 1, kriging())
-plot(mnt_kriging)
-writeRaster(mnt_kriging,"mnt_kriging.tif")
-
-test_1 <- mnt_tin-mnt_knnidw
-plot (test_1)
-
-test_2 <- mnt_tin-mnt_kriging
-plot (test_2)
-##################################################################################
-laz_norm <- normalize_height(laz, mnt_tin)
-plot(laz_norm)
-
-laz_filtered <- filter_poi(laz_norm, Z >= 0 & Z <= 0.2)
-mnt_filtered <- rasterize_terrain(laz_filtered, 1, tin())
-plot(laz_filtered)
-
-writeRaster(mnt_filtered, "laz_filtered.tif")
-mnt_filtered2 <- rasterize_canopy(laz, 1, pitfree(thr, edg))
-writeRaster(mnt_filtered2,"laz_filtered2.tif")
-
-
-
-detect_cloisonnements <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
+detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
   
   if (is.null(laz_norm) || npoints(laz_norm) == 0) {
     stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
@@ -186,9 +148,79 @@ detect_cloisonnements <- function(laz_norm, resolution = 1, threshold = 0.1, out
   return(cloisonnements_sf)
 }
 
+# Import data ----
 
-# Exemple d'utilisation
-cloisonnements <- detect_cloisonnements(laz_norm)
+lien <- fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")
+lien <- lien[["features"]][["properties"]][["url"]][1]
+
+coord <- draw.area()
+download.lidar(coord[1],coord[2],coord[3],coord[4])
+
+laz_dir <- list.files(dir, 
+                  full.names = T, 
+                  pattern= '.laz')
+
+laz <- readLAS(laz_dir)
+laz <- cut.area(laz, coord)
+
+# Exploring data ----
+plot(laz)
+
+laz_soil <- lidR::filter_ground(laz)
+mycsf <- csf(TRUE, 1, 1, time_step = 1)
+laz_soil <- classify_ground(laz, mycsf)
+laz_soil <-lidR::filter_poi(laz_soil, Classification == 2L & ReturnNumber > 5L)
+
+plot(laz_soil)
+
+test = segment_shapes(LAS_soil, shp_hline(th1 = 100, th2 = 2, k = 3), attribute = "Shape")
+
+plot(test, color = "Shape")
+
+ground <- classify_ground(laz, csf())
+plot(ground, color = "Classification")
+chm <- grid_canopy(laz, res = 1, pitfree())
+plot(chm)
+density <- grid_density(laz, res = 1)
+plot (density)
+
+#comparaison d'algo : aucune différence 
+
+mnt_tin <- rasterize_terrain(laz, 1, tin())
+plot(mnt_tin)
+plot_dtm3d(mnt_tin)
+writeRaster(mnt_tin,"mnt_tin2.tif")
+
+mnt_knnidw <- rasterize_terrain(laz, 1, knnidw())
+plot(mnt_knnidw)
+writeRaster(mnt_knnidw,"mnt_knnidw.tif")
+
+mnt_kriging <- rasterize_terrain(laz, 1, kriging())
+plot(mnt_kriging)
+writeRaster(mnt_kriging,"mnt_kriging.tif")
+
+test_1 <- mnt_tin-mnt_knnidw
+plot (test_1)
+
+test_2 <- mnt_tin-mnt_kriging
+plot (test_2)
+
+laz_norm <- normalize_height(laz, mnt_tin)
+plot(laz_norm)
+
+laz_filtered <- filter_poi(laz_norm, Z >= 0 & Z <= 0.2)
+mnt_filtered <- rasterize_terrain(laz_filtered, 1, tin())
+plot(laz_filtered)
+
+writeRaster(mnt_filtered, "laz_filtered.tif")
+mnt_filtered2 <- rasterize_canopy(laz, 1, pitfree(thr, edg))
+writeRaster(mnt_filtered2,"laz_filtered2.tif")
+
+
+# Analysis ----
+
+# Exemple d'utilisation de detect.cloiso
+cloisonnements <- detect.cloiso(laz_norm)
 
 
 
