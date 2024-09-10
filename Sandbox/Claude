@@ -119,3 +119,15 @@ create_lines_from_coords <- function(edge_coords, resolution, crs) {
   
   return(lines_sf)
 }
+
+
+
+[1] "Dimensions du MNT: 1235x1605x1"
+[1] "Dimensions de la pente: 1235x1605x1"
+[1] "Dimensions des zones planes: 1235x1605x1"
+[1] "Dimensions de la matrice d'image: 1235x1605"
+[1] "Dimensions des contours: 1234x1605"
+[1] "Nombre de points de contour: 77024"
+Erreur dans if (nrow(group) > 1) { : l'argument est de longueur nulle
+De plus : Message d'avis :
+There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained.
