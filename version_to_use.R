@@ -96,7 +96,7 @@ cut.area = function(laz, liste){
   return(clip)
 }
 
-detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
+detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, min_length = 10, output_file = "cloisonnements_norm.gpkg") {
   
   if (is.null(laz_norm) || npoints(laz_norm) == 0) {
     stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
@@ -109,7 +109,7 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file
   returns <- grid_metrics(laz_norm, ~length(Z), res = resolution)
   names(returns) <- "num_returns"
   
-  #3. MNH
+  # 3. MNH (Modèle Numérique de Hauteur)
   mnh <- grid_canopy(laz_norm, res = resolution, algorithm = pitfree())
   names(mnh) <- "mnh_height"
   
@@ -123,10 +123,9 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file
   combined_df <- na.omit(combined_df)  # Suppression des lignes avec des NA
   
   # 5. Détecter les zones à faible densité, faible nombre de retours et faible hauteur
-  print(combined_df)
   combined_df$low_density <- ifelse(combined_df$density < quantile(combined_df$density, threshold, na.rm = TRUE), 1, 0)
-  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE)-6, 1, 0)
-  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE)-5, 1, 0)
+  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE), 1, 0)
+  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE), 1, 0)
   
   # 6. Détecter les cloisonnements
   combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_mnh == 1, 1, 0)
@@ -136,72 +135,32 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file
   
   # 8. Convertir en objet spatial
   if (nrow(cloisonnements_points) > 0) {
-    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz))
+    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz_norm))
     
-    # 9. Exporter au format GPKG
-    st_write(cloisonnements_sf, output_file, driver = "GPKG")
+    # 9. Appliquer un buffer et dissoudre pour connecter les points proches
+    cloisonnements_buffer <- st_buffer(cloisonnements_sf, dist = resolution * 1.5)
+    cloisonnements_dissolved <- st_union(cloisonnements_buffer)
+    
+    # 10. Extraire les lignes centrales des polygones
+    cloisonnements_lines <- st_cast(cloisonnements_dissolved, "MULTILINESTRING")
+    cloisonnements_lines <- st_cast(cloisonnements_lines, "LINESTRING")
+    
+    # 11. Filtrer les lignes courtes (avec gestion des unités)
+    min_length_units <- units::set_units(min_length, "m")
+    cloisonnements_filtered <- cloisonnements_lines[st_length(cloisonnements_lines) > min_length_units]
+    
+    # Assurez-vous que l'objet est bien un sf
+    cloisonnements_filtered <- st_as_sf(cloisonnements_filtered)
+    
+    # 12. Exporter au format GPKG
+    st_write(cloisonnements_filtered, output_file, driver = "GPKG", delete_layer = TRUE)
     message("Cloisonnements exportés vers ", output_file)
+    
+    return(cloisonnements_filtered)
   } else {
     message("Aucun cloisonnement détecté.")
+    return(NULL)
   }
-  
-  return(cloisonnements_sf)
-}
-
-
-detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill = 5, slope_threshold = 5, output_file = "cloisonnements_norm.gpkg") {
-  
-  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
-    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
-  }
-  
-  # 1. Créer un MNT à haute résolution
-  mnt <- grid_terrain(laz_norm, res = resolution, algorithm = tin())
-  
-  # 2. Calculer la pente
-  slope <- terrain(mnt, opt = "slope", unit = "degrees")
-  
-  # 3. Identifier les zones planes (potentiels cloisonnements)
-  flat_areas <- slope < slope_threshold
-  
-  # 4. Convertir en image pour le traitement
-  img <- as.cimg(as.matrix(flat_areas))
-  
-  
-  # 5. Appliquer un filtre morphologique pour nettoyer l'image
-  kernel <- makeBrush(5, shape = "disc")
-  img_clean <- imager::dilate(imager::erode(img, kernel), kernel)
-  
-  # 6. Détection de lignes avec la transformée de Hough
-  hough <- hough_line(img_clean)
-  peaks <- hough_findpeaks(hough, threshold = 0.5 * max(hough$votes), npeaks = 50)
-  
-  # 7. Convertir les pics en lignes
-  lines_sf <- st_sfc(lapply(1:nrow(peaks), function(i) {
-    theta <- peaks$theta[i]
-    rho <- peaks$rho[i]
-    x0 <- rho * cos(theta)
-    y0 <- rho * sin(theta)
-    x1 <- x0 + 1000 * (-sin(theta))
-    y1 <- y0 + 1000 * cos(theta)
-    st_linestring(matrix(c(x0, y0, x1, y1), ncol = 2, byrow = TRUE))
-  }), crs = st_crs(laz_norm))
-  
-  # 8. Filtrer les lignes trop courtes
-  lines_sf <- lines_sf[st_length(lines_sf) > line_length]
-  
-  # 9. Fusionner les lignes proches
-  lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
-  lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
-  
-  # 10. Nettoyer et simplifier les lignes finales
-  lines_final <- st_simplify(lines_merged, dTolerance = resolution)
-  
-  # 11. Exporter au format GPKG
-  st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
-  message("Cloisonnements exportés vers ", output_file)
-  
-  return(lines_final)
 }
 
 # Import data ----
