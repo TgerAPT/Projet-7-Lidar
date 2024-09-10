@@ -77,3 +77,19 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
     return(NULL)
   }
 }
+
+
+
+[1] "Dimensions du MNT: 1235x1605x1"
+[1] "Dimensions de la pente: 1235x1605x1"
+[1] "Dimensions des zones planes: 1235x1605x1"
+[1] "Dimensions de l'image array: 1235x1605x1"
+[1] "Dimensions de dx: "
+[1] "Dimensions de dy: "
+Erreur dans 1:min_rows : le résultat serait un vecteur trop long
+De plus : Messages d'avis :
+1: There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
+2: Dans min(nrow(dx), nrow(dy)) :
+  aucun argument trouvé pour min ; Inf est renvoyé
+3: Dans min(ncol(dx), ncol(dy)) :
+  aucun argument trouvé pour min ; Inf est renvoyé
