@@ -6,8 +6,8 @@ output: pdf_document
 
 ---
   
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
 # Introduction
@@ -21,7 +21,10 @@ Le travail développé dans cet article se base sur l'emploi du LIDAR pour déte
 ## Récupération des données sur R
 Les packages utilisés sont les suivants : 
 
-`library(dplyr)` Manipulation de données tabulées [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)\
+```{r, results = "hide"}
+library(dplyr)
+``` 
+Manipulation de données tabulées [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)\
 `library(ggplot2)` Création de graphiques *Hadley Wickham* `sf_use_s2(FALSE)` corrige les erreurs de géométrie sphérique\
 `library(happign)` Récupération de données IGN *Paul Carteron*\
 `library(jsonlite)` Lecture de données JSON *Jeroen Ooms*\
@@ -32,12 +35,9 @@ Les packages utilisés sont les suivants :
 `library(terra)` Manipulation de données spatialisées *Robert Hijmans*\
 `library(tmap)` Création de cartes *Martijn Tennekes* `tmap_mode("view")` permet de créer des cartes dynamiques\
 
-```
+```{r, echo = FALSE}
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 dir <- getwd()
-
-lien <- fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")
-lien <- lien[["features"]][["properties"]][["url"]][1]
 
 draw.area = function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
