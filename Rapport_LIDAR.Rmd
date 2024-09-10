@@ -48,7 +48,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 dir <- getwd()
 ```
 
-### Fonctions
+###Extraction des données
 La première étape consiste à récupérer les coordonnées de la zone étudiée. L'utilisation de la fonction drawFeatures() du package mapedit permet de demander à l'utilsateur d'encadrer directement sur une carte interactive la zone souhaitée.
 ```{r}
 draw.area = function(){
@@ -113,7 +113,8 @@ cut.area = function(laz, liste){
 }
 ```
 
-
+## Détection des cloisonnements sur R
+bah c'est pas la bonne donc ça sert à rien
 ```{r}
 detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
   
@@ -168,22 +169,9 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file
 }
 ```
 
-## Traitement des données
-
-utilisation de l'IA Magnier 4
-
-## Détection des cloisonnements sur R
-
-
 
 ## Détection des cloisonnements sur QGIS
-
-
-*récupération des données LIDAR HD du géoservice*\
-*traitement des données sur R*\
-*export vers qgis*\
-*2 phases principales : traitement de l'image + détection de l'objet*\
-
+Une autre piste a été envisagée dans la mesure ou l'automatisation de la détection n'aboutirait pas. Les couches traitées ont donc été exportées sur qgis sous format raster avec un opérateur interprétant les lignes visibles.
 
 
 # Résultats
