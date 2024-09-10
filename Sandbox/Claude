@@ -24,8 +24,14 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   img_clean <- imager::dilate(imager::erode(img, kernel), kernel)
   
   # 6. Détection de contours simple
-  dx <- diff(img_clean[,1:(dim(img_clean)[2]-1),1,1])
-  dy <- diff(img_clean[1:(dim(img_clean)[1]-1),,1,1])
+  img_array <- array(img_clean, dim(img_clean)[1:2])
+  dx <- diff(img_array, differences = 1, lag = 1, dim = 2)
+  dy <- diff(img_array, differences = 1, lag = 1, dim = 1)
+  
+  # Assurez-vous que dx et dy ont la même taille
+  dx <- dx[1:(nrow(dx)-1), ]
+  dy <- dy[, 1:(ncol(dy)-1)]
+  
   edges <- sqrt(dx^2 + dy^2)
   
   # 7. Binarisation des contours
@@ -35,29 +41,29 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   edge_coords <- which(edges_bin > 0, arr.ind = TRUE)
   
   # 9. Création des lignes à partir des coordonnées des contours
-  lines_sf <- st_sfc(lapply(1:(nrow(edge_coords)-1), function(i) {
-    st_linestring(matrix(c(edge_coords[i,2], edge_coords[i,1],
-                           edge_coords[i+1,2], edge_coords[i+1,1]), ncol = 2, byrow = TRUE))
-  }), crs = st_crs(laz_norm))
-  
-  # 10. Filtrer les lignes trop courtes
-  lines_sf <- lines_sf[st_length(lines_sf) > line_length]
-  
-  # 11. Fusionner les lignes proches
-  lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
-  lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
-  
-  # 12. Nettoyer et simplifier les lignes finales
-  lines_final <- st_simplify(lines_merged, dTolerance = resolution)
-  
-  # 13. Exporter au format GPKG
-  st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
-  message("Cloisonnements exportés vers ", output_file)
-  
-  return(lines_final)
+  if (nrow(edge_coords) > 1) {
+    lines_sf <- st_sfc(lapply(1:(nrow(edge_coords)-1), function(i) {
+      st_linestring(matrix(c(edge_coords[i,2], edge_coords[i,1],
+                             edge_coords[i+1,2], edge_coords[i+1,1]), ncol = 2, byrow = TRUE))
+    }), crs = st_crs(laz_norm))
+    
+    # 10. Filtrer les lignes trop courtes
+    lines_sf <- lines_sf[st_length(lines_sf) > line_length]
+    
+    # 11. Fusionner les lignes proches
+    lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
+    lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
+    
+    # 12. Nettoyer et simplifier les lignes finales
+    lines_final <- st_simplify(lines_merged, dTolerance = resolution)
+    
+    # 13. Exporter au format GPKG
+    st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
+    message("Cloisonnements exportés vers ", output_file)
+    
+    return(lines_final)
+  } else {
+    message("Aucune ligne détectée. Vérifiez les paramètres ou les données d'entrée.")
+    return(NULL)
+  }
 }
-
-
-Erreur dans dx^2 + dy^2 : tableaux de tailles inadéquates
-De plus : Message d'avis :
-There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
