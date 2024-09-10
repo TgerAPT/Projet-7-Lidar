@@ -4,6 +4,9 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
     stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
   }
   
+  # Nettoyage des points dégénérés
+  laz_norm <- filter_duplicates(laz_norm)
+  
   # 1. Créer un MNT à haute résolution
   mnt <- grid_terrain(laz_norm, res = resolution, algorithm = tin())
   
@@ -19,9 +22,51 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   # 5. Appliquer un filtre morphologique pour nettoyer l'image
   kernel <- matrix(1, nrow = 5, ncol = 5)
   img_clean <- EBImage::dilate(EBImage::erode(img_matrix, kernel), kernel)
-
-Erreur dans if (any(dim(im)[3:4]) > 1) stop("The Hough transform is only defined for 2D, grayscale images") : 
-  valeur manquante là où TRUE / FALSE est requis
-De plus : Messages d'avis :
-1: There were 782 degenerated ground points. Some X Y Z coordinates were repeated. They were removed. 
-2: There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained.
+  
+  # 6. Détection de lignes avec la transformée de Hough
+  # Assurez-vous que img_clean est une matrice 2D
+  if (!is.matrix(img_clean) || length(dim(img_clean)) != 2) {
+    stop("L'image nettoyée n'est pas une matrice 2D comme requis pour la transformation de Hough.")
+  }
+  
+  # Convertir en image en niveaux de gris si nécessaire
+  img_clean <- as.numeric(img_clean)
+  img_clean <- (img_clean - min(img_clean)) / (max(img_clean) - min(img_clean))
+  
+  tryCatch({
+    hough <- hough_line(img_clean)
+    peaks <- hough_findpeaks(hough, threshold = 0.5 * max(hough$votes), npeaks = 50)
+  }, error = function(e) {
+    stop(paste("Erreur lors de la transformation de Hough:", e$message))
+  })
+  
+  # Le reste de la fonction reste inchangé
+  # ...
+  
+  # 7. Convertir les pics en lignes
+  lines_sf <- st_sfc(lapply(1:nrow(peaks), function(i) {
+    theta <- peaks$theta[i]
+    rho <- peaks$rho[i]
+    x0 <- rho * cos(theta)
+    y0 <- rho * sin(theta)
+    x1 <- x0 + 1000 * (-sin(theta))
+    y1 <- y0 + 1000 * cos(theta)
+    st_linestring(matrix(c(x0, y0, x1, y1), ncol = 2, byrow = TRUE))
+  }), crs = st_crs(laz_norm))
+  
+  # 8. Filtrer les lignes trop courtes
+  lines_sf <- lines_sf[st_length(lines_sf) > line_length]
+  
+  # 9. Fusionner les lignes proches
+  lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
+  lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
+  
+  # 10. Nettoyer et simplifier les lignes finales
+  lines_final <- st_simplify(lines_merged, dTolerance = resolution)
+  
+  # 11. Exporter au format GPKG
+  st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
+  message("Cloisonnements exportés vers ", output_file)
+  
+  return(lines_final)
+}
