@@ -148,6 +148,62 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file
   return(cloisonnements_sf)
 }
 
+
+detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill = 5, slope_threshold = 5, output_file = "cloisonnements_norm.gpkg") {
+  
+  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
+    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
+  }
+  
+  # 1. Créer un MNT à haute résolution
+  mnt <- grid_terrain(laz_norm, res = resolution, algorithm = tin())
+  
+  # 2. Calculer la pente
+  slope <- terrain(mnt, opt = "slope", unit = "degrees")
+  
+  # 3. Identifier les zones planes (potentiels cloisonnements)
+  flat_areas <- slope < slope_threshold
+  
+  # 4. Convertir en image pour le traitement
+  img <- as.cimg(as.matrix(flat_areas))
+  
+  
+  # 5. Appliquer un filtre morphologique pour nettoyer l'image
+  kernel <- makeBrush(5, shape = "disc")
+  img_clean <- imager::dilate(imager::erode(img, kernel), kernel)
+  
+  # 6. Détection de lignes avec la transformée de Hough
+  hough <- hough_line(img_clean)
+  peaks <- hough_findpeaks(hough, threshold = 0.5 * max(hough$votes), npeaks = 50)
+  
+  # 7. Convertir les pics en lignes
+  lines_sf <- st_sfc(lapply(1:nrow(peaks), function(i) {
+    theta <- peaks$theta[i]
+    rho <- peaks$rho[i]
+    x0 <- rho * cos(theta)
+    y0 <- rho * sin(theta)
+    x1 <- x0 + 1000 * (-sin(theta))
+    y1 <- y0 + 1000 * cos(theta)
+    st_linestring(matrix(c(x0, y0, x1, y1), ncol = 2, byrow = TRUE))
+  }), crs = st_crs(laz_norm))
+  
+  # 8. Filtrer les lignes trop courtes
+  lines_sf <- lines_sf[st_length(lines_sf) > line_length]
+  
+  # 9. Fusionner les lignes proches
+  lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
+  lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
+  
+  # 10. Nettoyer et simplifier les lignes finales
+  lines_final <- st_simplify(lines_merged, dTolerance = resolution)
+  
+  # 11. Exporter au format GPKG
+  st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
+  message("Cloisonnements exportés vers ", output_file)
+  
+  return(lines_final)
+}
+
 # Import data ----
 
 lien <- fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")

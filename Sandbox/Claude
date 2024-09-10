@@ -1,0 +1,88 @@
+library(sf)
+library(terra)
+library(lidR)
+library(dplyr)
+library(units)
+
+detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill = 5, slope_threshold = 5, output_file = "cloisonnements_norm.gpkg") {
+  
+  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
+    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
+  }
+  
+  # Nettoyage des points dégénérés
+  laz_norm <- filter_duplicates(laz_norm)
+  
+  # 1. Créer un MNT à haute résolution
+  mnt <- grid_terrain(laz_norm, res = resolution, algorithm = tin())
+  print(paste("Dimensions du MNT:", paste(dim(mnt), collapse = "x")))
+  
+  # 2. Calculer la pente
+  slope <- terra::terrain(mnt, v = "slope", unit = "degrees")
+  print(paste("Dimensions de la pente:", paste(dim(slope), collapse = "x")))
+  
+  # 3. Identifier les zones planes (potentiels cloisonnements)
+  flat_areas <- slope < slope_threshold
+  print(paste("Dimensions des zones planes:", paste(dim(flat_areas), collapse = "x")))
+  
+  # 4. Convertir en raster pour le traitement
+  flat_raster <- rast(flat_areas)
+  
+  # 5. Vectoriser les zones planes
+  flat_polygons <- as.polygons(flat_raster)
+  flat_polygons_sf <- st_as_sf(flat_polygons)
+  
+  # 6. Simplifier et nettoyer les polygones
+  flat_polygons_sf <- st_simplify(flat_polygons_sf, dTolerance = resolution)
+  flat_polygons_sf <- st_cast(flat_polygons_sf, "POLYGON")
+  
+  # 7. Extraire les lignes centrales des polygones
+  centerlines <- st_linestring_centerline(flat_polygons_sf)
+  
+  # 8. Filtrer les lignes trop courtes
+  centerlines_length <- st_length(centerlines)
+  centerlines <- centerlines[as.numeric(centerlines_length) > line_length, ]
+  
+  if (length(centerlines) == 0) {
+    message("Aucune ligne ne dépasse la longueur minimale. Ajustez le paramètre line_length ou vérifiez les données d'entrée.")
+    return(NULL)
+  }
+  
+  # 9. Fusionner les lignes proches
+  centerlines_buffered <- st_buffer(centerlines, dist = gap_fill)
+  centerlines_merged <- st_cast(st_union(centerlines_buffered), "LINESTRING")
+  
+  # 10. Nettoyer et simplifier les lignes finales
+  lines_final <- st_simplify(centerlines_merged, dTolerance = resolution)
+  
+  # 11. Exporter au format GPKG
+  st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
+  message("Cloisonnements exportés vers ", output_file)
+  
+  return(lines_final)
+}
+
+# Fonction auxiliaire pour extraire les lignes centrales des polygones
+st_linestring_centerline <- function(polygons) {
+  suppressWarnings({
+    centerlines <- st_sfc(lapply(1:nrow(polygons), function(i) {
+      poly <- polygons[i, ]
+      skeleton <- st_centroid(poly)
+      if (st_geometry_type(skeleton) == "POINT") {
+        return(NULL)
+      }
+      return(skeleton)
+    }), crs = st_crs(polygons))
+  })
+  
+  centerlines <- centerlines[!sapply(centerlines, is.null)]
+  return(centerlines)
+}
+
+
+
+Aucune ligne ne dépasse la longueur minimale. Ajustez le paramètre line_length ou vérifiez les données d'entrée.
+Messages d'avis :
+1: There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
+2: Dans st_cast.sf(flat_polygons_sf, "POLYGON") :
+  repeating attributes for all sub-geometries for which they may not be constant
