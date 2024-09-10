@@ -1,19 +1,46 @@
-library(lidR)
+# About this code ----
+
+# Projet pédagogique sur l'utilisation des données LIDAR récentes pour retrouver
+# les cloisonnements sur un peuplement
+
+# Auteur : Armange Tristan, Gerval Thomas, Magnier Mathieu, Marie Gabriel
+# Contact : tristan.armange@agroparistech.fr
+# Contact : thomas.gerval@agroparistech.fr
+# Contact : mathieu.magnier@agroparistech.fr
+# Contact : gabriel.marie@agroparistech.fr
+
+# Dernière mise à jour : 12 septembre 2024
+
+# Package installation ----
+
+install.packages("happign")
+install.packages("sf")
+install.packages("tmap")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("purr")
+install.packages("stars")
+install.packages("terra")
+install.packages("jsonlite")
+
+# Librairies ----
+
 library(happign)
-library(sf)
-library(tmap); tmap_mode("view") # Set map to interactive
+library(sf)  # for vector
+library(tmap); tmap_mode("view")  # Set map to interactive
 library(dplyr)
-library(ggplot2);sf_use_s2(FALSE) # Avoid problem with spherical geometry
+library(ggplot2);sf_use_s2(FALSE)  # Avoid problem with spherical geometry
 library(purrr)
 library(stars)
-library(terra)
-library(jsonlite)
+library(terra)  # for raster
+library(jsonlite)  # to manipulate .json
+
+# Set working directory ----
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 dir <- getwd()
 
-lien <- fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")
-lien <- lien[["features"]][["properties"]][["url"]][1]
+# Fonctions ----
 
 draw.area = function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
@@ -23,7 +50,6 @@ draw.area = function(){
   x2 = max(zone[, 1])
   return(c(x1,y1,x2,y2))
 }
-
 
 download.lidar = function(x1, y1, x2, y2) {
   # Créer une séquence de coordonnées avec un pas de 10000
@@ -70,6 +96,62 @@ cut.area = function(laz, liste){
   return(clip)
 }
 
+detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
+  
+  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
+    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
+  }
+  
+  # 1. Calculer la densité des points
+  density <- grid_density(laz_norm, res = resolution)
+  
+  # 2. Calculer le nombre de retours
+  returns <- grid_metrics(laz_norm, ~length(Z), res = resolution)
+  names(returns) <- "num_returns"
+  
+  #3. MNH
+  mnh <- grid_canopy(laz_norm, res = resolution, algorithm = pitfree())
+  names(mnh) <- "mnh_height"
+  
+  # 4. Empiler les rasters pour les combiner
+  combined_stack <- raster::stack(density, returns, mnh)
+  
+  # Convertir en data frame pour traitement
+  combined_df <- as.data.frame(combined_stack, xy = TRUE)
+  
+  # Vérifier la présence de valeurs NA et appliquer na.rm = TRUE
+  combined_df <- na.omit(combined_df)  # Suppression des lignes avec des NA
+  
+  # 5. Détecter les zones à faible densité, faible nombre de retours et faible hauteur
+  print(combined_df)
+  combined_df$low_density <- ifelse(combined_df$density < quantile(combined_df$density, threshold, na.rm = TRUE), 1, 0)
+  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE)-6, 1, 0)
+  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE)-5, 1, 0)
+  
+  # 6. Détecter les cloisonnements
+  combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_mnh == 1, 1, 0)
+  
+  # 7. Filtrer les zones de cloisonnements
+  cloisonnements_points <- combined_df[combined_df$cloisonnement == 1, ]
+  
+  # 8. Convertir en objet spatial
+  if (nrow(cloisonnements_points) > 0) {
+    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz))
+    
+    # 9. Exporter au format GPKG
+    st_write(cloisonnements_sf, output_file, driver = "GPKG")
+    message("Cloisonnements exportés vers ", output_file)
+  } else {
+    message("Aucun cloisonnement détecté.")
+  }
+  
+  return(cloisonnements_sf)
+}
+
+# Import data ----
+
+lien <- fromJSON(txt = "https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=766276,6353692.630280115,769016.9951275728,6355112.417896504")
+lien <- lien[["features"]][["properties"]][["url"]][1]
 
 coord <- draw.area()
 download.lidar(coord[1],coord[2],coord[3],coord[4])
@@ -80,6 +162,8 @@ laz_dir <- list.files(dir,
 
 laz <- readLAS(laz_dir)
 laz <- cut.area(laz, coord)
+
+# Exploring data ----
 plot(laz)
 
 laz_soil <- lidR::filter_ground(laz)
@@ -133,62 +217,10 @@ mnt_filtered2 <- rasterize_canopy(laz, 1, pitfree(thr, edg))
 writeRaster(mnt_filtered2,"laz_filtered2.tif")
 
 
+# Analysis ----
 
-detect_cloisonnements <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
-  
-  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
-    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
-  }
-  
-  # 1. Calculer la densité des points
-  density <- grid_density(laz_norm, res = resolution)
-  
-  # 2. Calculer le nombre de retours
-  returns <- grid_metrics(laz_norm, ~length(Z), res = resolution)
-  names(returns) <- "num_returns"
-  
-  #3. MNH
-  mnh <- grid_canopy(laz_norm, res = resolution, algorithm = pitfree())
-  names(mnh) <- "mnh_height"
-  
-  # 4. Empiler les rasters pour les combiner
-  combined_stack <- raster::stack(density, returns, mnh)
-  
-  # Convertir en data frame pour traitement
-  combined_df <- as.data.frame(combined_stack, xy = TRUE)
-  
-  # Vérifier la présence de valeurs NA et appliquer na.rm = TRUE
-  combined_df <- na.omit(combined_df)  # Suppression des lignes avec des NA
-  
-  # 5. Détecter les zones à faible densité, faible nombre de retours et faible hauteur
-  print(combined_df)
-  combined_df$low_density <- ifelse(combined_df$density < quantile(combined_df$density, threshold, na.rm = TRUE), 1, 0)
-  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE)-6, 1, 0)
-  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE)-5, 1, 0)
-  
-  # 6. Détecter les cloisonnements
-  combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_mnh == 1, 1, 0)
-  
-  # 7. Filtrer les zones de cloisonnements
-  cloisonnements_points <- combined_df[combined_df$cloisonnement == 1, ]
-  
-  # 8. Convertir en objet spatial
-  if (nrow(cloisonnements_points) > 0) {
-    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz))
-    
-    # 9. Exporter au format GPKG
-    st_write(cloisonnements_sf, output_file, driver = "GPKG")
-    message("Cloisonnements exportés vers ", output_file)
-  } else {
-    message("Aucun cloisonnement détecté.")
-  }
-  
-  return(cloisonnements_sf)
-}
-
-
-# Exemple d'utilisation
-cloisonnements <- detect_cloisonnements(laz_norm)
+# Exemple d'utilisation de detect.cloiso
+cloisonnements <- detect.cloiso(laz_norm)
 
 
 
