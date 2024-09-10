@@ -2,6 +2,7 @@ library(sf)
 library(terra)
 library(lidR)
 library(dplyr)
+library(units)
 
 detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill = 5, slope_threshold = 5, output_file = "cloisonnements_norm.gpkg") {
   
@@ -39,7 +40,8 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   centerlines <- st_linestring_centerline(flat_polygons_sf)
   
   # 8. Filtrer les lignes trop courtes
-  centerlines <- centerlines[st_length(centerlines) > line_length, ]
+  centerlines_length <- st_length(centerlines)
+  centerlines <- centerlines[as.numeric(centerlines_length) > line_length, ]
   
   if (length(centerlines) == 0) {
     message("Aucune ligne ne dépasse la longueur minimale. Ajustez le paramètre line_length ou vérifiez les données d'entrée.")
@@ -62,76 +64,17 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
 
 # Fonction auxiliaire pour extraire les lignes centrales des polygones
 st_linestring_centerline <- function(polygons) {
-  centerlines <- st_sfc(lapply(1:nrow(polygons), function(i) {
-    poly <- polygons[i, ]
-    skeleton <- st_centroid(poly)
-    if (st_geometry_type(skeleton) == "POINT") {
-      return(NULL)
-    }
-    return(skeleton)
-  }), crs = st_crs(polygons))
+  suppressWarnings({
+    centerlines <- st_sfc(lapply(1:nrow(polygons), function(i) {
+      poly <- polygons[i, ]
+      skeleton <- st_centroid(poly)
+      if (st_geometry_type(skeleton) == "POINT") {
+        return(NULL)
+      }
+      return(skeleton)
+    }), crs = st_crs(polygons))
+  })
   
   centerlines <- centerlines[!sapply(centerlines, is.null)]
   return(centerlines)
 }
-
-
-[1] "Dimensions du MNT: 1235x1605x1"
-[1] "Dimensions de la pente: 1235x1605x1"
-[1] "Dimensions des zones planes: 1235x1605x1"
-Erreur dans Ops.units(st_length(centerlines), line_length) : 
-  both operands of the expression should be "units" objects
-De plus : Il y a eu 50 avis ou plus (utilisez warnings() pour voir les 50 premiers)
-> warnings()
-Messages d'avis :
-1: There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained.
-2: In st_cast.sf(flat_polygons_sf, "POLYGON") :
-  repeating attributes for all sub-geometries for which they may not be constant
-3: st_centroid assumes attributes are constant over geometries
-4: st_centroid assumes attributes are constant over geometries
-5: st_centroid assumes attributes are constant over geometries
-6: st_centroid assumes attributes are constant over geometries
-7: st_centroid assumes attributes are constant over geometries
-8: st_centroid assumes attributes are constant over geometries
-9: st_centroid assumes attributes are constant over geometries
-10: st_centroid assumes attributes are constant over geometries
-11: st_centroid assumes attributes are constant over geometries
-12: st_centroid assumes attributes are constant over geometries
-13: st_centroid assumes attributes are constant over geometries
-14: st_centroid assumes attributes are constant over geometries
-15: st_centroid assumes attributes are constant over geometries
-16: st_centroid assumes attributes are constant over geometries
-17: st_centroid assumes attributes are constant over geometries
-18: st_centroid assumes attributes are constant over geometries
-19: st_centroid assumes attributes are constant over geometries
-20: st_centroid assumes attributes are constant over geometries
-21: st_centroid assumes attributes are constant over geometries
-22: st_centroid assumes attributes are constant over geometries
-23: st_centroid assumes attributes are constant over geometries
-24: st_centroid assumes attributes are constant over geometries
-25: st_centroid assumes attributes are constant over geometries
-26: st_centroid assumes attributes are constant over geometries
-27: st_centroid assumes attributes are constant over geometries
-28: st_centroid assumes attributes are constant over geometries
-29: st_centroid assumes attributes are constant over geometries
-30: st_centroid assumes attributes are constant over geometries
-31: st_centroid assumes attributes are constant over geometries
-32: st_centroid assumes attributes are constant over geometries
-33: st_centroid assumes attributes are constant over geometries
-34: st_centroid assumes attributes are constant over geometries
-35: st_centroid assumes attributes are constant over geometries
-36: st_centroid assumes attributes are constant over geometries
-37: st_centroid assumes attributes are constant over geometries
-38: st_centroid assumes attributes are constant over geometries
-39: st_centroid assumes attributes are constant over geometries
-40: st_centroid assumes attributes are constant over geometries
-41: st_centroid assumes attributes are constant over geometries
-42: st_centroid assumes attributes are constant over geometries
-43: st_centroid assumes attributes are constant over geometries
-44: st_centroid assumes attributes are constant over geometries
-45: st_centroid assumes attributes are constant over geometries
-46: st_centroid assumes attributes are constant over geometries
-47: st_centroid assumes attributes are constant over geometries
-48: st_centroid assumes attributes are constant over geometries
-49: st_centroid assumes attributes are constant over geometries
-50: st_centroid assumes attributes are constant over geometries
