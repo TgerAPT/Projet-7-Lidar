@@ -1,12 +1,12 @@
 ---
-title: "Télédétection des cloisonnements d'exploitation forestière à partir de données LiDaR"
+  title: "Télédétection des cloisonnements d'exploitation forestière à partir de données LiDAR"
 author: "Armange Tristan, Gerval Thomas, Magnier Mathieu, Marie Gabriel"
 date: "2024-09-09"
 output: pdf_document
 
 ---
-
-```{r setup, include=FALSE}
+  
+  ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -20,21 +20,21 @@ Le travail développé dans cet article se base sur l'emploi du LIDAR pour déte
 
 ## Récupération des données sur R
 Les packages utilisés sont les suivants : 
-```
-library(lidR)
-library(happign)
-library(sf)
-library(tmap); tmap_mode("view") # Set map to interactive
-library(dplyr)
-library(ggplot2);sf_use_s2(FALSE) # Avoid problem with spherical geometry
-library(purrr)
-library(stars)
-library(terra)
-library(jsonlite)
-```
+
+`library(dplyr)` Manipulation de données tabulées [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)\
+`library(ggplot2)` Création de graphiques *Hadley Wickham* `sf_use_s2(FALSE)` corrige les erreurs de géométrie sphérique\
+`library(happign)` Récupération de données IGN *Paul Carteron*\
+`library(jsonlite)` Lecture de données JSON *Jeroen Ooms*\
+`library(lidR)` Manipulation des données LiDAR *David Auty*\
+`library(purrr)` Outils de programmation fonctionnelle [*auteurs*](https://purrr.tidyverse.org/authors.html#citation)\
+`library(sf)` Manipulation des vecteurs géospatialisés *Edzer Pebesma*\
+`library(stars)` Manipulation de tables de données spatialisées *Data cubes* *Edzer Pebesma*\
+`library(terra)` Manipulation de données spatialisées *Robert Hijmans*\
+`library(tmap)` Création de cartes *Martijn Tennekes* `tmap_mode("view")` permet de créer des cartes dynamiques\
 
 ## Traitement des données
 
+utilisation de l'IA Magnier 4
 
 ## Détection des cloisonnements sur R
 
@@ -66,11 +66,12 @@ library(jsonlite)
 
 *taille des données*\
 *succès en fonction du type de forêt*\
-**\
+*ancien passage de véhicules*\
 **\
 **\
 
 
 # Conclusion
+
 
 
