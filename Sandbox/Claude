@@ -9,55 +9,65 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   
   # 1. Créer un MNT à haute résolution
   mnt <- grid_terrain(laz_norm, res = resolution, algorithm = tin())
+  print(paste("Dimensions du MNT:", paste(dim(mnt), collapse = "x")))
   
   # 2. Calculer la pente
   slope <- terrain(mnt, opt = "slope", unit = "degrees")
+  print(paste("Dimensions de la pente:", paste(dim(slope), collapse = "x")))
   
   # 3. Identifier les zones planes (potentiels cloisonnements)
   flat_areas <- slope < slope_threshold
+  print(paste("Dimensions des zones planes:", paste(dim(flat_areas), collapse = "x")))
   
   # 4. Convertir en image pour le traitement
-  img <- as.cimg(as.matrix(flat_areas))
+  img_array <- as.array(flat_areas)
+  print(paste("Dimensions de l'image array:", paste(dim(img_array), collapse = "x")))
   
-  # 5. Appliquer un filtre morphologique pour nettoyer l'image
-  kernel <- imager::as.cimg(matrix(1, nrow = 5, ncol = 5))
-  img_clean <- imager::dilate(imager::erode(img, kernel), kernel)
-  
-  # 6. Détection de contours simple
-  img_array <- array(img_clean, dim(img_clean)[1:2])
+  # 5. Détection de contours simple
   dx <- diff(img_array, differences = 1, lag = 1, dim = 2)
   dy <- diff(img_array, differences = 1, lag = 1, dim = 1)
   
+  print(paste("Dimensions de dx:", paste(dim(dx), collapse = "x")))
+  print(paste("Dimensions de dy:", paste(dim(dy), collapse = "x")))
+  
   # Assurez-vous que dx et dy ont la même taille
-  dx <- dx[1:(nrow(dx)-1), ]
-  dy <- dy[, 1:(ncol(dy)-1)]
+  min_rows <- min(nrow(dx), nrow(dy))
+  min_cols <- min(ncol(dx), ncol(dy))
+  
+  dx <- dx[1:min_rows, 1:min_cols]
+  dy <- dy[1:min_rows, 1:min_cols]
+  
+  print(paste("Nouvelles dimensions de dx:", paste(dim(dx), collapse = "x")))
+  print(paste("Nouvelles dimensions de dy:", paste(dim(dy), collapse = "x")))
   
   edges <- sqrt(dx^2 + dy^2)
+  print(paste("Dimensions des contours:", paste(dim(edges), collapse = "x")))
   
-  # 7. Binarisation des contours
+  # 6. Binarisation des contours
   edges_bin <- edges > quantile(edges, 0.9, na.rm = TRUE)
   
-  # 8. Extraction des coordonnées des pixels de contour
+  # 7. Extraction des coordonnées des pixels de contour
   edge_coords <- which(edges_bin > 0, arr.ind = TRUE)
+  print(paste("Nombre de points de contour:", nrow(edge_coords)))
   
-  # 9. Création des lignes à partir des coordonnées des contours
+  # 8. Création des lignes à partir des coordonnées des contours
   if (nrow(edge_coords) > 1) {
     lines_sf <- st_sfc(lapply(1:(nrow(edge_coords)-1), function(i) {
       st_linestring(matrix(c(edge_coords[i,2], edge_coords[i,1],
                              edge_coords[i+1,2], edge_coords[i+1,1]), ncol = 2, byrow = TRUE))
     }), crs = st_crs(laz_norm))
     
-    # 10. Filtrer les lignes trop courtes
+    # 9. Filtrer les lignes trop courtes
     lines_sf <- lines_sf[st_length(lines_sf) > line_length]
     
-    # 11. Fusionner les lignes proches
+    # 10. Fusionner les lignes proches
     lines_buffered <- st_buffer(lines_sf, dist = gap_fill)
     lines_merged <- st_cast(st_union(lines_buffered), "LINESTRING")
     
-    # 12. Nettoyer et simplifier les lignes finales
+    # 11. Nettoyer et simplifier les lignes finales
     lines_final <- st_simplify(lines_merged, dTolerance = resolution)
     
-    # 13. Exporter au format GPKG
+    # 12. Exporter au format GPKG
     st_write(lines_final, output_file, driver = "GPKG", delete_layer = TRUE)
     message("Cloisonnements exportés vers ", output_file)
     
@@ -67,9 +77,3 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
     return(NULL)
   }
 }
-
-
-
-Erreur dans dx^2 + dy^2 : tableaux de tailles inadéquates
-De plus : Message d'avis :
-There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
