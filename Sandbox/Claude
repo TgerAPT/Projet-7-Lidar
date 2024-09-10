@@ -78,3 +78,11 @@ st_linestring_centerline <- function(polygons) {
   centerlines <- centerlines[!sapply(centerlines, is.null)]
   return(centerlines)
 }
+
+
+
+Aucune ligne ne dépasse la longueur minimale. Ajustez le paramètre line_length ou vérifiez les données d'entrée.
+Messages d'avis :
+1: There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
+2: Dans st_cast.sf(flat_polygons_sf, "POLYGON") :
+  repeating attributes for all sub-geometries for which they may not be constant
