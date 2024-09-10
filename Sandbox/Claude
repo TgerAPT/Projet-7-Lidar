@@ -20,3 +20,8 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
   kernel <- matrix(1, nrow = 5, ncol = 5)
   img_clean <- EBImage::dilate(EBImage::erode(img_matrix, kernel), kernel)
 
+Erreur dans if (any(dim(im)[3:4]) > 1) stop("The Hough transform is only defined for 2D, grayscale images") : 
+  valeur manquante là où TRUE / FALSE est requis
+De plus : Messages d'avis :
+1: There were 782 degenerated ground points. Some X Y Z coordinates were repeated. They were removed. 
+2: There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained.
