@@ -82,7 +82,7 @@ laz <- readLAS(laz_dir)
 laz <- cut.area(laz, coord)
 plot(laz)
 
-#ancien laz LAS <- readLAS("C:/Users/Thomas/Documents/R3A/Projet_7/638285.514345207_6970281.70253564.laz")
+
 las <- laz
 
 laz_soil <- lidR::filter_ground(laz)
