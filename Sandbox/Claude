@@ -82,3 +82,19 @@ detect.cloiso <- function(laz_norm, resolution = 0.5, line_length = 20, gap_fill
     return(NULL)
   }
 }
+
+
+[1] "Dimensions du MNT: 1235x1605x1"
+[1] "Dimensions de la pente: 1235x1605x1"
+[1] "Dimensions des zones planes: 1235x1605x1"
+[1] "Dimensions de la matrice d'image: 1235x1605"
+[1] "Dimensions de dx: 1234x1605"
+[1] "Dimensions de dy: 1234x1605"
+[1] "Nouvelles dimensions de dx: 1234x1605"
+[1] "Nouvelles dimensions de dy: 1234x1605"
+[1] "Dimensions des contours: 1234x1605"
+[1] "Nombre de points de contour: 77024"
+Erreur dans Ops.units(st_length(lines_sf), line_length) : 
+  both operands of the expression should be "units" objects
+De plus : Message d'avis :
+There were 3191 degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained. 
