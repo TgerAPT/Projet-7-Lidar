@@ -57,6 +57,7 @@ draw.area = function(){
 }
 ```
 
+L'étape d'après consiste à télécharger les tuiles de l'IGN correspondant à la zone d'étude. Cette étape s'appuie sur l'utilisation du package jsonlite qui cherche la source de données et extrait le fichier. *autre api marche pas ? + qu'en est-il de serveurs pas stables*
 
 ```{r}
 download.lidar = function(x1, y1, x2, y2) {
@@ -100,12 +101,16 @@ download.lidar = function(x1, y1, x2, y2) {
 }
 ```
 
+Une fois les tuiles récupérées, elle ne peuvent être traitées en l'état car bien trop lourdes (emprise de 10 kha). L'emprise est donc ramenée à la valeur spécifiée au début par l'utilisateur.
 ```{r}
 cut.area = function(laz, liste){
   clip = clip_rectangle(laz, liste[1], liste[2], liste[3], liste[4])
   return(clip)
 }
+```
 
+
+```{r}
 detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
   
   if (is.null(laz_norm) || npoints(laz_norm) == 0) {
