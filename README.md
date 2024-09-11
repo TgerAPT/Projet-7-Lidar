@@ -5,4 +5,6 @@ Bienvenue dans le projet de détection automatique des cloisonnements d'exploita
 
 Le but de ce projet est de développer un outil automatisé capable de détecter les cloisonnements d'exploitation forestière. En utilisant des techniques de traitement d'images et d'analyse de données géospatiales en R, ce projet vise à améliorer l'efficacité des tâches de gestion forestière en fournissant une méthode précise et automatisée pour identifier les zones de cloisonnement.
 
+Ce projet se caractérise par son approche exploratoire dans le domaine de la télédétection forestière. En utilisant des programmes R pour automatiser la détection des cloisonnements d'exploitation.
+
 Ce projet est réalisé par Tristan ARMANGE, Mathieu MAGNIER, Thomas GERVAL, Gabriel MARIE 
