@@ -63,3 +63,5 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, min_area = 
     return(NULL)
   }
 }
+
+Aucun cloisonnement n'a été conservé après le filtrage par surface minimale.
