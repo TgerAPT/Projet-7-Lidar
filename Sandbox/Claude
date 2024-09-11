@@ -57,3 +57,8 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, min_area = 
     return(NULL)
   }
 }
+
+
+
+Erreur dans data.frame(id = 1:length(cloisonnements_filtered), area = as.numeric(st_area(cloisonnements_filtered)),  : 
+  les arguments impliquent des nombres de lignes différents : 2, 0
