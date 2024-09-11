@@ -20,7 +20,7 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, min_area = 
   combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE), 1, 0)
   combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_mnh == 1, 1, 0)
   
-  # 7-8. Création des polygones
+  # 7-8. Création des polygones avec attributs
   cloisonnements_points <- combined_df[combined_df$cloisonnement == 1, ]
   if (nrow(cloisonnements_points) > 0) {
     cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz_norm))
@@ -33,18 +33,25 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, min_area = 
     # 10. Simplifier les polygones
     cloisonnements_simplified <- st_simplify(cloisonnements_polygons, dTolerance = resolution)
     
-    # 11. Filtrer les polygones trop petits
+    # 11. Filtrer les polygones trop petits et ajouter des attributs
     min_area_units <- units::set_units(min_area, "m^2")
     cloisonnements_filtered <- cloisonnements_simplified[st_area(cloisonnements_simplified) > min_area_units]
     
-    # Assurez-vous que l'objet est bien un sf
-    cloisonnements_filtered <- st_as_sf(cloisonnements_filtered)
+    # Créer un data frame avec les attributs
+    attributes_df <- data.frame(
+      id = 1:length(cloisonnements_filtered),
+      area = as.numeric(st_area(cloisonnements_filtered)),
+      perimeter = as.numeric(st_length(st_cast(cloisonnements_filtered, "MULTILINESTRING")))
+    )
+    
+    # Combiner les géométries avec les attributs
+    cloisonnements_with_attributes <- st_sf(attributes_df, geometry = cloisonnements_filtered)
     
     # 12. Exporter au format GPKG
-    st_write(cloisonnements_filtered, output_file, driver = "GPKG", delete_layer = TRUE)
+    st_write(cloisonnements_with_attributes, output_file, driver = "GPKG", delete_layer = TRUE)
     message("Cloisonnements exportés vers ", output_file)
     
-    return(cloisonnements_filtered)
+    return(cloisonnements_with_attributes)
   } else {
     message("Aucun cloisonnement détecté.")
     return(NULL)
