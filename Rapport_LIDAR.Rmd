@@ -1,9 +1,11 @@
 ---
-title: "Télédétection des cloisonnements d'exploitation forestière à partir de données LiDAR"
+title: Télédétection des cloisonnements d'exploitation forestière à partir de données
+  LiDAR
 author: "Armange Tristan, Gerval Thomas, Magnier Mathieu, Marie Gabriel"
 date: "2024-09-09"
-output: pdf_document
-
+output:
+  html_document:
+    df_print: paged
 ---
   
 ```{r setup, include = FALSE}
@@ -20,8 +22,8 @@ IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Instit
 
 
 # Matériel et Méthode
-## Origine des données
-La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz
+## Origine des données et zone d'étude
+La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz. Pour tester et ajuster le modèle plusieurs forêts de nature variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en montagne et une forêt de feuillus en plaine.
 
 ## Récupération des données sur R
 ### Packages
@@ -49,7 +51,7 @@ dir <- getwd()
 ```
 
 ###Extraction des données
-La première étape consiste à récupérer les coordonnées de la zone étudiée. L'utilisation de la fonction drawFeatures() du package mapedit permet de demander à l'utilsateur d'encadrer directement sur une carte interactive la zone souhaitée.
+La première étape consiste à récupérer les coordonnées de la zone étudiée. L'utilisation de la fonction drawFeatures() du package mapedit permet de demander à l'utilsateur d'encadrer directement sur une carte interactive la zone souhaitée. La zone doit impérativement faire partie des zones couvertes par LiDAR HD.
 ```{r}
 draw.area = function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
@@ -61,7 +63,7 @@ draw.area = function(){
 }
 ```
 
-L'étape d'après consiste à télécharger les tuiles de l'IGN correspondant à la zone d'étude. Cette étape s'appuie sur l'utilisation du package jsonlite qui cherche la source de données et extrait le fichier. *autre api marche pas ? + qu'en est-il de serveurs pas stables*
+L'étape d'après consiste à télécharger les tuiles de l'IGN correspondant à la zone d'étude. Cette étape s'appuie sur l'utilisation du package jsonlite qui cherche la source de données et extrait le fichier au format .laz. *autre api marche pas ? + qu'en est-il de serveurs pas stables*
 
 ```{r}
 download.lidar = function(x1, y1, x2, y2) {
@@ -112,9 +114,11 @@ cut.area = function(laz, liste){
   return(clip)
 }
 ```
+Après ces différentes étapes un fichier .laz est créé et servira de base pour les différents traitements.
 
 ## Détection des cloisonnements sur R
-bah c'est pas la bonne donc ça sert à rien
+
+La fonction `detect.cloiso()` est la fonction principale du code. 
 ```{r}
 detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
   
@@ -171,13 +175,27 @@ detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file
 
 
 ## Détection des cloisonnements sur QGIS
-Une autre piste a été envisagée dans la mesure ou l'automatisation de la détection n'aboutirait pas. Les couches traitées ont donc été exportées sur qgis sous format raster avec un opérateur interprétant les lignes visibles.
+En plus des tentatives de détection des cloisonnements sur R, une deuxième approche sur QGis a été mise en place.
+L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur. De plus certaines fonctions comme Voronoi sont plus simple d'utilisation sur QGis.\
+La fin du processus de détection nécessite l'interprétation des vecteurs créés qui est également optimisé par la visualisation sur QGIS.
 
 
 # Résultats
 
+Le code ci-après a été amputé de la partrie drawfeature pour présenter les zones d'étude
+```
+coord <- draw.area()
+```
 
 ```
+coord <- [insérer coord]
+download.lidar(coord[1],coord[2],coord[3],coord[4])
+laz_dir <- list.files(dir, 
+                  full.names = T, 
+                  pattern= '.laz')
+
+laz <- readLAS(laz_dir)
+laz <- cut.area(laz, coord)
 
 ```
 ## Traitement des données
@@ -195,7 +213,7 @@ La principale contrainte relative à ces données est leur taille importante. Il
 A l'heure actuelle la détection des cloisonnements a été testée sur des morceaux de forêts de différentes natures(plantations ou non, feuillus ou résineux, peuplements âgés ou jeunes,...) sans pour autant être exhaustive. Une étude supplémentaire serait nécessaire pour déterminer les facteurs nécessaires à une détection de qualité. Pour l'instant l'absence de détection n'exclue pas la présence des cloisonnements.\
 En plus des cloisonnements actuels, une approche supplémentaire sur la présence d'anciens cloisonnements ou passage de véhicules serait une information importante à donner au gestionnaire.\
 *mentionner le travail à l'echelle du terrain ou les cloiso sont deja visibles = quel interet à l'approche aerienne si on ne peut pas visualiser des grands ensembles.*
-
+Il est probable que les cloisonnements soient détectés au même titre que des pistes forestières. il faudrait ajouter un traitement permettant de les discriminer
 
 # Conclusion
 
