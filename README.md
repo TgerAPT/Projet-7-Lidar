@@ -20,4 +20,4 @@ Le Github est organisé de manière suivante :
  - Le rapport écrit sous markdown
  - Le Projet7_lidar qui est le script final
 
-Ce projet est réalisé par Tristan ARMANGE, Mathieu MAGNIER, Thomas GERVAL, Gabriel MARIE en septembre 2024.
+Ce projet est réalisé par Tristan ARMANGE, Thomas GERVAL, Mathieu MAGNIER, Gabriel MARIE en septembre 2024.
