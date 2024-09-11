@@ -11,7 +11,7 @@ Le Github est organisé de manière suivante :
  - Le dossier "Function" contenant les fonctions développées par notre groupe comme le téléchargement automatique du LiDAR.
  - Le dossier "Sandbox" nous servant de corbeille pour supprimer les scripts de manière non définitive
  - le gitignore avec les fichiers qui ne sont pas dans le script comme les dalles LiDAR
- - le readme (là où vous etes actuellement)
+ - le readme (là où vous êtes actuellement)
  - Le rapport écrit sous markdown
  - Le versio_to_use qui est le script final
 
