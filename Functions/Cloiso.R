@@ -1,3 +1,16 @@
+library(happign)
+library(sf)  # for vector
+library(tmap); tmap_mode("view")  # Set map to interactive
+library(dplyr)
+library(ggplot2);sf_use_s2(FALSE)  # Avoid problem with spherical geometry
+library(purrr)
+library(stars)
+library(terra)  # for raster
+library(jsonlite)  # to manipulate .json
+library(lidR)
+library(spatialEco)
+
+
 detect.cloiso <- function(laz, resolution = 1, threshold = 0.1, output_file = "cloisonnements.gpkg") {
   if (is.null(laz) || npoints(laz) == 0) {
     stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
@@ -23,14 +36,13 @@ detect.cloiso <- function(laz, resolution = 1, threshold = 0.1, output_file = "c
   
   
   # Empiler les rasters pour les combiner
-  combined_stack <- raster::stack(density, returns, mnh, mnt_sqrt)
+  combined_stack <- raster::stack(returns, mnh, mnt_sqrt)
   
   # Convertir en data frame pour traitement
   combined_df <- as.data.frame(combined_stack, xy = TRUE)
   combined_df <- na.omit(combined_df)
   
   # Détecter les zones à faible densité, faible nombre de retours et faible hauteur
-  combined_df$low_density <- ifelse(combined_df$density < quantile(combined_df$density, threshold, na.rm = TRUE), 1, 0)
   combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE), 1, 0)
   combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE), 1, 0)
   combined_df$low_mnt = ifelse(combined_df$mnt < quantile(combined_df$mnt, threshold, na.rm = TRUE), 1, 0)
