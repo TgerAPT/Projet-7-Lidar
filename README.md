@@ -13,6 +13,6 @@ Le Github est organisé de manière suivante :
  - le gitignore qui définit les types de fichier non stockés sur le git.
  - le readme (là où vous êtes actuellement)
  - Le rapport écrit sous markdown
- - Le version_to_use qui est le script final
+ - Le Projet7_lidar qui est le script final
 
 Ce projet est réalisé par Tristan ARMANGE, Mathieu MAGNIER, Thomas GERVAL, Gabriel MARIE en septembre 2024.
