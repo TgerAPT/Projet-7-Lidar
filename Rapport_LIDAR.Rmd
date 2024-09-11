@@ -118,7 +118,8 @@ Après ces différentes étapes un fichier .laz est créé et servira de base po
 
 ## Détection des cloisonnements sur R
 
-La fonction `detect.cloiso()` est la fonction principale du code. 
+La fonction `detect.cloiso()` est la fonction principale du code. Le principe est le suivant : plusieurs données sont extraites du fichier d'origine puis en attribuant des seuils à ces valeurs, les points sont classés et discriminés si le nombre de critères remplis est suffisant.\
+Le premier critère utilisé est la densité qui correspond au nombre d'impulsions émises vers la zone.
 ```{r}
 detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
   
@@ -190,21 +191,10 @@ coord <- draw.area()
 ```
 coord <- [insérer coord]
 download.lidar(coord[1],coord[2],coord[3],coord[4])
-laz_dir <- list.files(dir, 
-                  full.names = T, 
-                  pattern= '.laz')
 
-laz <- readLAS(laz_dir)
-laz <- cut.area(laz, coord)
 
 ```
-## Traitement des données
 
-
-## Détection des cloisonnements sur R
-
-
-## Détection des cloisonnements sur QGIS
 
 
 # Discussion
@@ -213,7 +203,7 @@ La principale contrainte relative à ces données est leur taille importante. Il
 A l'heure actuelle la détection des cloisonnements a été testée sur des morceaux de forêts de différentes natures(plantations ou non, feuillus ou résineux, peuplements âgés ou jeunes,...) sans pour autant être exhaustive. Une étude supplémentaire serait nécessaire pour déterminer les facteurs nécessaires à une détection de qualité. Pour l'instant l'absence de détection n'exclue pas la présence des cloisonnements.\
 En plus des cloisonnements actuels, une approche supplémentaire sur la présence d'anciens cloisonnements ou passage de véhicules serait une information importante à donner au gestionnaire.\
 *mentionner le travail à l'echelle du terrain ou les cloiso sont deja visibles = quel interet à l'approche aerienne si on ne peut pas visualiser des grands ensembles.*
-Il est probable que les cloisonnements soient détectés au même titre que des pistes forestières. il faudrait ajouter un traitement permettant de les discriminer
+Les cloisonnements sont détectés au même titre que des pistes forestières. Il faudrait ajouter un traitement permettant de les discriminer. De même la détection s'accompagne de nombreuses formes superflues ne correspondant pas aux cloisonnements. Ce bruit pourrait être retiré en complexifiant les fonctions.
 
 # Conclusion
 
