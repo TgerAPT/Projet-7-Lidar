@@ -15,4 +15,4 @@ Le Github est organisé de manière suivante :
  - Le rapport écrit sous markdown
  - Le versio_to_use qui est le script final
 
-Ce projet est réalisé par Tristan ARMANGE, Mathieu MAGNIER, Thomas GERVAL, Gabriel MARIE 
+Ce projet est réalisé par Tristan ARMANGE, Mathieu MAGNIER, Thomas GERVAL, Gabriel MARIE en septembre 2024.
