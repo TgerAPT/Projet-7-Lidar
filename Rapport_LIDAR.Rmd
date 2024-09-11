@@ -119,59 +119,9 @@ Après ces différentes étapes un fichier .laz est créé et servira de base po
 ## Détection des cloisonnements sur R
 
 La fonction `detect.cloiso()` est la fonction principale du code. Le principe est le suivant : plusieurs données sont extraites du fichier d'origine puis en attribuant des seuils à ces valeurs, les points sont classés et discriminés si le nombre de critères remplis est suffisant.\
-Le premier critère utilisé est la densité qui correspond au nombre d'impulsions émises vers la zone.
+Le nombre de retours correspond au nombre de fois ou le laser a croisé des éléments et été réfléchi. A priori un cloisonnement devrait avoir un faible nombre de retour puisque le couvert y est moins important que dans le reste de la parcelle.\
 ```{r}
-detect.cloiso <- function(laz_norm, resolution = 1, threshold = 0.1, output_file = "cloisonnements_norm.gpkg") {
-  
-  if (is.null(laz_norm) || npoints(laz_norm) == 0) {
-    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
-  }
-  
-  # 1. Calculer la densité des points
-  density <- grid_density(laz_norm, res = resolution)
-  
-  # 2. Calculer le nombre de retours
-  returns <- grid_metrics(laz_norm, ~length(Z), res = resolution)
-  names(returns) <- "num_returns"
-  
-  #3. MNH
-  mnh <- grid_canopy(laz_norm, res = resolution, algorithm = pitfree())
-  names(mnh) <- "mnh_height"
-  
-  # 4. Empiler les rasters pour les combiner
-  combined_stack <- raster::stack(density, returns, mnh)
-  
-  # Convertir en data frame pour traitement
-  combined_df <- as.data.frame(combined_stack, xy = TRUE)
-  
-  # Vérifier la présence de valeurs NA et appliquer na.rm = TRUE
-  combined_df <- na.omit(combined_df)  # Suppression des lignes avec des NA
-  
-  # 5. Détecter les zones à faible densité, faible nombre de retours et faible hauteur
-  print(combined_df)
-  combined_df$low_density <- ifelse(combined_df$density < quantile(combined_df$density, threshold, na.rm = TRUE), 1, 0)
-  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE)-6, 1, 0)
-  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE)-5, 1, 0)
-  
-  # 6. Détecter les cloisonnements
-  combined_df$cloisonnement <- ifelse(combined_df$low_density == 1 & combined_df$low_returns == 1 & combined_df$low_mnh == 1, 1, 0)
-  
-  # 7. Filtrer les zones de cloisonnements
-  cloisonnements_points <- combined_df[combined_df$cloisonnement == 1, ]
-  
-  # 8. Convertir en objet spatial
-  if (nrow(cloisonnements_points) > 0) {
-    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), crs = st_crs(laz))
-    
-    # 9. Exporter au format GPKG
-    st_write(cloisonnements_sf, output_file, driver = "GPKG")
-    message("Cloisonnements exportés vers ", output_file)
-  } else {
-    message("Aucun cloisonnement détecté.")
-  }
-  
-  return(cloisonnements_sf)
-}
+
 ```
 
 
