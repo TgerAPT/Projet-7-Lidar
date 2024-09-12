@@ -19,7 +19,7 @@ Les cloisonnements sont des outils sylvicoles important pour lutter contre le ta
 
 # Matériel et Méthode
 ## Origine des données et zone d'étude
-La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz *(Figure 1)*. Pour tester et ajuster le modèle plusieurs forêts de nature variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en Somme dont les cloisonnements sont connus et une forêt de feuillus en Haut-Languedoc.
+La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz *(Figure 1)*. Pour tester et ajuster le modèle plusieurs forêts de natures variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en Somme dont les cloisonnements sont connus et une forêt de feuillus en Haut-Languedoc.
 
 
 ```{r, echo = FALSE, fig.cap = "Figure 1 : Fichier .las de la zone en Somme", fig.align = 'center'}
