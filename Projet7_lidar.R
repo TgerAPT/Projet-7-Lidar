@@ -34,7 +34,7 @@ library(stars)  # for spatial object
 library(terra)  # for raster
 library(jsonlite)  # to manipulate .json
 library(lidR)  # for LiDAR data
-library(spatialEco)  # analyse 
+library(spatialEco)  # analyse spatial 
 
 # Set working directory ----
 
