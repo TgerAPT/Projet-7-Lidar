@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 # Introduction
 
-Les cloisonnements sont des outils sylvicoles important pour lutter contre le tassement des sols et préserver la productivité des sols forestiers. En effet, en fonction de la texture su sol, le tassement peut être plus ou moins important lors du passage des engins et ainsi réduire la porosité et donc la réserve utile en eau du sol. Cependant, il n’existe pas de carte accessible de ces cloisonnements lorsqu’ils existent. Ceux-ci peuvent alors être perdus avec le temps. L’utilisation du LiDAR (Light Detection And Ranging) semble être une solution. Le LiDAR consiste en une mesure de distance par détection de la lumière *(IGN, 2021)*. Actuellement, en France un projet de LiDAR (LiDAR HD), vise à cartographier l’ensemble du territoire avec une haute densité (10 points par m²) *(IGN, 2021)*, pour le moment 2/3 du territoire a été survolé. Ainsi cela mène à la question de : Comment déterminer les cloisonnements grâce à des données LiDAR.
+Les cloisonnements sont des outils sylvicoles important pour lutter contre le tassement des sols forestiers et préserver leur productivité. En effet, en fonction de la texture su sol, le tassement peut être plus ou moins important lors du passage des engins et ainsi réduire la porosité et donc la réserve utile en eau du sol. Cependant, il n’existe pas de carte accessible de ces cloisonnements lorsqu’ils existent. Ceux-ci peuvent alors être perdus avec le temps. L’utilisation du LiDAR (Light Detection And Ranging) semble être une solution. Le LiDAR consiste en une mesure de distance par détection de la lumière *(IGN, 2021)*. Actuellement, en France un projet de LiDAR (LiDAR HD), vise à cartographier l’ensemble du territoire avec une haute densité (10 points par m²) *(IGN, 2021)*, pour le moment 2/3 du territoire a été survolé. Ainsi cela mène à la question suivante : Comment déterminer les cloisonnements grâce à des données LiDAR ?
 
 IGN. 2021. Lidar aéroporté : des mesures de précision - Institut - IGN. https://www.ign.fr/institut/kiosque/lidar-aeroporte-des-mesures-de-precision (Consulté le 10 septembre 2024). 
 IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Institut - IGN. https://www.ign.fr/institut/lidar-hd-vers-une-nouvelle-cartographie-3d-du-territoire (Consulté le 10 septembre 2024). 
@@ -151,8 +151,12 @@ download.lidar(coord[1],coord[2],coord[3],coord[4])
 # Discussion
 
 La principale contrainte relative à ces données est leur taille importante. Il est pour l'instant inenvisageable de travailler à l'échelle de massifs forestiers entiers.\
-A l'heure actuelle la détection des cloisonnements a été testée sur des morceaux de forêts de différentes natures(plantations ou non, feuillus ou résineux, peuplements âgés ou jeunes,...) sans pour autant être exhaustive. Une étude supplémentaire serait nécessaire pour déterminer les facteurs nécessaires à une détection de qualité. Pour l'instant l'absence de détection n'exclue pas la présence des cloisonnements.\
+A l'heure actuelle la détection des cloisonnements a été testée sur des morceaux de forêts de différentes natures (plantations ou non, feuillus ou résineux, peuplements âgés ou jeunes,...) sans pour autant être exhaustive. Une étude supplémentaire serait nécessaire pour déterminer les facteurs nécessaires à une détection de qualité. Pour l'instant l'absence de détection n'exclue pas la présence des cloisonnements.\
 En plus des cloisonnements actuels, une approche supplémentaire sur la présence d'anciens cloisonnements ou passage de véhicules serait une information importante à donner au gestionnaire.\
+Il a également été remarqué que ce programme ne fonctionne pas pour détécter les
+cloisonnements lorsque la densité de couvert est trop élevée, un autre projet
+pour adapter ce programme aux différents contexte forestier pourrait donc être
+envisagé.
 *mentionner le travail à l'echelle du terrain ou les cloiso sont deja visibles = quel interet à l'approche aerienne si on ne peut pas visualiser des grands ensembles.*
 Les cloisonnements sont détectés au même titre que des pistes forestières. Il faudrait ajouter un traitement permettant de les discriminer. De même la détection s'accompagne de nombreuses formes superflues ne correspondant pas aux cloisonnements. Ce bruit pourrait être retiré en complexifiant les fonctions.
 
