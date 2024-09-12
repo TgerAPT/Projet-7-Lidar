@@ -105,7 +105,7 @@ download.lidar = function(x1, y1, x2, y2) {
 
 Cette partie définit la fonction `download.lidar` qui prend quatre paramètres : `x1`, `y1`, `x2`, et `y2`. Ces paramètres représentent les coordonnées des coins opposés de la zone géographique pour laquelle nous voulons obtenir des données LiDAR.
 
-Ensuite, deux séquences sont créées : `x` et `y`. Ces séquences sont générées à partir des paramètres d'entrée, avec un pas de 10000 unités. Cela permet de diviser la zone géographique en une grille de points espacés de 10000 unités, qui seront utilisés pour interroger le service web de données LiDAR.
+Ensuite, deux séquences sont créées : `x` et `y`. Ces séquences sont générées à partir des paramètres d'entrée, avec un pas de 10000 m. Cela permet de diviser la zone géographique en une grille de points espacés de 10000 m (correspondant à la résolution des tuiles), qui seront utilisés pour interroger le service web de données LiDAR.
 
 Partie 2 : Boucles d'itération sur les coordonnées
 
@@ -114,7 +114,7 @@ Partie 2 : Boucles d'itération sur les coordonnées
     for (j in y) {
 ```
 
-Cette partie met en place deux boucles imbriquées qui vont itérer sur toutes les combinaisons possibles de coordonnées `x` et `y`. Chaque itération représente un point spécifique de la grille créée précédemment. Ces boucles permettent de parcourir systématiquement l'ensemble de la zone géographique définie.
+Cette partie met en place deux boucles imbriquées qui vont itérer sur toutes les combinaisons possibles de coordonnées `x` et `y`. Chaque itération représente une tuile spécifique de la grille créée précédemment. Ces boucles permettent de parcourir systématiquement l'ensemble de la zone géographique définie.
 
 Partie 3 : Construction de l'URL pour la requête JSON
 
@@ -250,7 +250,7 @@ detect.cloiso <- function(laz, resolution = 1, threshold = 0.1, output_file = "c
 
 ## Détection des cloisonnements sur QGIS
 En plus des tentatives de détection des cloisonnements sur R, une deuxième approche sur QGis a été mise en place.
-L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur et d'une détéction plus précise. De plus certaines fonctions comme Voronoi sont plus simple d'utilisation sur QGis.\
+L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur et d'une détéction plus précise. De plus certaines fonctions comme Voronoi sont plus simples d'utilisation sur QGis.\
 La fin du processus de détection nécessite l'interprétation des vecteurs créés qui est également optimisé par la visualisation sur QGIS.
 
 
@@ -260,7 +260,7 @@ La fin du processus de détection nécessite l'interprétation des vecteurs cré
 ## Détection des cloisonnements
 
 L’application de la fonction `detect.cloiso()` sur les différentes zones étudiées *(Figure2)* montre des résultats très hétérogènes. L’ajustement ayant été en grande partie réalisée sur la zone en Somme, c’est sur cette dernière que l’interprétation est la plus simple. Les zones de plus haute densité ne permettent généralement pas de détecter des cloisonnements et au contraire les routes et pistes plus larges sont détectées au même titre que les cloisonnements.
-La couche obtenu est exporté vers QGis pour être interprétée directement par le gestionnaire. Les cloisonnements sont les lignes fines, régulièrement espacée et parallèles. 
+La couche obtenue est exportée vers QGis pour être interprétée directement par le gestionnaire. Les cloisonnements sont les lignes fines, régulièrement espacées et parallèles. 
 
 ```{r, echo=FALSE, fig.cap = "Figure 2 : Application de la fonction detect.cloiso() sur les trois zones d'étude. De gauche à droite : Forêt du PNR Haut Languedoc, Forêt de Creuse dans la Somme, Forêt de résineux dans les landes"}
 knitr::include_graphics("https://drive.google.com/uc?export=view&id=1KBIgPd05gYWKF0e0Icea6pGEWomStboI")
