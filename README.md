@@ -15,11 +15,11 @@ Ce projet se caractérise par son approche exploratoire dans le domaine de la t�
 
 Le Github est organisé de manière suivante :
  - Le dossier "Function" contenant les fonctions développées par notre groupe comme le téléchargement automatique du LiDAR.
- - Le dossier "Sandbox" nous servant de corbeille pour supprimer les scripts de manière non définitive
+ - Le dossier "Sandbox" nous servant de corbeille pour supprimer les scripts de manière non définitive (comme le script exploratoire).
  - le gitignore qui définit les types de fichier non stockés sur le git.
- - le readme (là où vous êtes actuellement)
- - Le rapport écrit sous markdown
- - Le Projet7_lidar qui est le script final
+ - le readme (là où vous êtes actuellement).
+ - Le rapport écrit sous markdown.
+ - Le Projet7_lidar qui est le script final.
 
 Ce projet est réalisé par Tristan ARMANGE, Thomas GERVAL, Mathieu MAGNIER, Gabriel MARIE en septembre 2024.
 </p>
