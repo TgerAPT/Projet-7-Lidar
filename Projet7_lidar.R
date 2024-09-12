@@ -43,7 +43,7 @@ dir <- getwd()
 
 # Fonctions ----
 
-draw.area = function(){
+draw.area <- function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
   y1 = min(zone[, 2])
   x1 = min(zone[, 1])
@@ -129,8 +129,8 @@ detect.cloiso <- function(laz, output_file, resolution = 1, threshold = 0.1) {
   combined_df <- na.omit(combined_df)
   
   # Détecter les zones à faible densité, faible nombre de retours et faible hauteur
-  combined_df$low_returns <- ifelse(combined_df$num_returns < 4, 1, 0)
-  combined_df$low_mnh <- ifelse(combined_df$mnh_height < 5, 1, 0)
+  combined_df$low_returns <- ifelse(combined_df$num_returns < 6, 1, 0)
+  combined_df$low_mnh <- ifelse(combined_df$mnh_height < 3, 1, 0)
   combined_df$low_mnt = ifelse(combined_df$mnt < quantile(combined_df$mnt, threshold, na.rm = TRUE), 1, 0)
   
   # Détecter les cloisonnements avec une pondération

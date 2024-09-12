@@ -43,8 +43,8 @@ detect.cloiso <- function(laz, resolution = 1, threshold = 0.1, output_file = "c
   combined_df <- na.omit(combined_df)
   
   # Détecter les zones à faible densité, faible nombre de retours et faible hauteur
-  combined_df$low_returns <- ifelse(combined_df$num_returns < quantile(combined_df$num_returns, threshold, na.rm = TRUE), 1, 0)
-  combined_df$low_mnh <- ifelse(combined_df$mnh_height < quantile(combined_df$mnh_height, threshold, na.rm = TRUE), 1, 0)
+  combined_df$low_returns <- ifelse(combined_df$num_returns < 6, 1, 0)
+  combined_df$low_mnh <- ifelse(combined_df$mnh_height < 3, 1, 0)
   combined_df$low_mnt = ifelse(combined_df$mnt < quantile(combined_df$mnt, threshold, na.rm = TRUE), 1, 0)
  
   # Détecter les cloisonnements avec une pondération
