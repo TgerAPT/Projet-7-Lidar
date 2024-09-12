@@ -28,8 +28,9 @@ La base de données de l'IGN offre en libre accès les données issues de ses su
 ## Récupération des données sur R
 ### Packages
 La plus grande partie du travail a été effectué sur Rstudio. Le traitement s'est appuyé sur de nombreuses fonctions déjà disponibles dans des packages adaptés aux données manipulées.\
-Les packages utilisés sont les suivants : 
-```{r, results = "hide"}
+Le package principal est `lidR` *David Auty* qui permet de réaliser de nombreuses opérations sur les fichiers LiDAR. Afin de passer de ces fichiers 3D à un format 2D adaptée à la cartographie on utilise la fonction `lidR::rasterize()` puis le package `terra`*Robert Hijmans* permet de réaliser des opérations sur les rasters ainsi créés.
+
+```{r, include = FALSE}
 library(dplyr)  # Manipulation de données tabulée  [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)
 library(ggplot2)  # Création de graphiques *Hadley Wickham*
 library(happign)  # Récupération de données IGN *Paul Carteron*
