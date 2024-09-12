@@ -359,7 +359,7 @@ La fin du processus de détection nécessite l'interprétation des vecteurs cré
 ## Détection des cloisonnements
 
 L’application de la fonction `detect.cloiso()` sur les différentes zones étudiées *(Figure2)* montre des résultats très hétérogènes. L’ajustement ayant été en grande partie réalisée sur la zone en Somme, c’est sur cette dernière que l’interprétation est la plus simple. Les zones de plus haute densité ne permettent généralement pas de détecter des cloisonnements et au contraire les routes et pistes plus larges sont détectées au même titre que les cloisonnements.
-La couche obtenue est exportée vers QGis pour être interprétée directement par le gestionnaire. Les cloisonnements sont les lignes fines, régulièrement espacées et parallèles. 
+La couche obtenue est exportée vers QGIS pour être interprétée directement par le gestionnaire. Les cloisonnements sont les lignes fines, régulièrement espacées et parallèles. 
 
 ```{r, echo=FALSE, fig.cap = "Figure 2 : Application de la fonction detect.cloiso() sur les trois zones d'étude. De gauche à droite : Forêt du PNR Haut Languedoc, Forêt de Creuse dans la Somme, Forêt de résineux dans les landes"}
 knitr::include_graphics("https://drive.google.com/uc?export=view&id=1KBIgPd05gYWKF0e0Icea6pGEWomStboI")
