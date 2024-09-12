@@ -43,7 +43,7 @@ dir <- getwd()
 
 # Fonctions ----
 
-draw.area = function(){
+draw.area <- function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
   y1 = min(zone[, 2])
   x1 = min(zone[, 1])
