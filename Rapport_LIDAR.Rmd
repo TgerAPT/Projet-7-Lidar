@@ -35,7 +35,6 @@ Le package principal est `lidR` *David Auty* qui permet de réaliser de nombreus
 ```{r, include = FALSE}
 library(dplyr)  # Manipulation de données tabulée  [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)
 library(ggplot2)  # Création de graphiques *Hadley Wickham*
-library(happign)  # Récupération de données IGN *Paul Carteron*
 library(jsonlite)  # Lecture de données JSON *Jeroen Ooms*
 library(lidR)  # Manipulation des données LiDAR *David Auty*
 library(mapedit) # outil drawfeatures
@@ -110,7 +109,7 @@ download.lidar = function(x1, y1, x2, y2) {
 }
 ```
 
-Une fois les tuiles récupérées, elle ne peuvent être traitées en l'état car bien trop lourdes (emprise de 10 kha). L'emprise est donc ramenée à la valeur spécifiée au début par l'utilisateur.
+Une fois les tuiles récupérées, elles ne peuvent pas être traitées en l'état du fait de leur taille (emprise de 10 kha). L'emprise est donc ramenée à la valeur spécifiée au début par l'utilisateur.
 ```{r}
 cut.area = function(laz, liste){
   clip = clip_rectangle(laz, liste[1], liste[2], liste[3], liste[4])
@@ -121,8 +120,8 @@ Après ces différentes étapes un fichier .laz est créé et servira de base po
 
 ## Détection des cloisonnements sur R
 
-La fonction `detect.cloiso()` est la fonction principale du code. Le principe est le suivant : plusieurs données sont extraites du fichier d'origine puis en attribuant des seuils à ces valeurs, les points sont classés et discriminés si le nombre de critères remplis est suffisant.\
-Le nombre de retours correspond au nombre de fois ou le laser a croisé des éléments et été réfléchi. A priori un cloisonnement devrait avoir un faible nombre de retour puisque le couvert y est moins important que dans le reste de la parcelle.\
+La fonction `detect.cloiso()` est la fonction principale du code. Le principe est le suivant : plusieurs données sont extraites du fichier d'origine, puis, en attribuant des seuils à ces valeurs, les points sont classés et discriminés si le nombre de critères remplis est suffisant.\
+Le nombre de retours correspond au nombre de fois où le laser a croisé des éléments et a été renvoyé vers l'appareil. A priori un cloisonnement devrait avoir un faible nombre de retour puisque le couvert y est moins important que dans le reste de la parcelle.\
 ```{r}
 
 ```
@@ -130,13 +129,13 @@ Le nombre de retours correspond au nombre de fois ou le laser a croisé des él�
 
 ## Détection des cloisonnements sur QGIS
 En plus des tentatives de détection des cloisonnements sur R, une deuxième approche sur QGis a été mise en place.
-L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur. De plus certaines fonctions comme Voronoi sont plus simple d'utilisation sur QGis.\
+L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur et d'une détéction plus précise. De plus certaines fonctions comme Voronoi sont plus simple d'utilisation sur QGis.\
 La fin du processus de détection nécessite l'interprétation des vecteurs créés qui est également optimisé par la visualisation sur QGIS.
 
 
 # Résultats
 
-Le code ci-après a été amputé de la partrie drawfeature pour présenter les zones d'étude
+Le code ci-après a été amputé de la partrie drawfeature pour présenter les zones d'étude.
 ```
 coord <- draw.area()
 ```
