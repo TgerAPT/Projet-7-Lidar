@@ -39,7 +39,7 @@ dir <- getwd()
 ```
 
 ### Extraction des données
-La première étape consiste à récupérer les coordonnées de la zone étudiée. L'utilisation de la fonction `drawFeatures()` du package `mapedit` permet de demander à l'utilsateur d'encadrer directement sur une carte interactive la zone souhaitée. La zone doit impérativement faire partie des zones couvertes par LiDAR HD.
+La première étape consiste à récupérer les coordonnées de la zone étudiée. L'utilisation de la fonction `drawFeatures()` du package `mapedit` permet de demander à l'utilsateur d'encadrer directement sur une carte interactive la zone souhaitée. La zone doit impérativement faire partie des zones couvertes par LiDAR HD, dans le cas contraire la fonction suivante (download.lidar()) renverra une erreur.
 ```
 draw.area = function(){
   zone = st_coordinates(st_transform(mapedit::drawFeatures(), crs = 2154))
@@ -52,7 +52,7 @@ draw.area = function(){
 ```
 Une fois la zone dessinée les coordonnées du coin bas gauche et haut droit sont retenues.\
 \
-L'étape d'après consiste à télécharger les tuiles de l'IGN correspondant à la zone d'étude. Cette étape s'appuie sur l'utilisation du package jsonlite qui cherche la source de données et extrait le fichier au format .laz. Un API du package `lidR` existait pour récupérer les données mais ce dernier ne fonctionnait pas. La solution apportée permet donc de contourner ce problème, mais les liens n'étant pas pérennes le risque que ceux-ci expirent subsiste.
+L'étape d'après consiste à télécharger les tuiles de l'IGN correspondant à la zone d'étude. Cette étape s'appuie sur l'utilisation du package jsonlite qui va récupérer le lien de téléchargement de la tuile correspondant aux coordonées, qui sera ensuite téléchargée grâce à download.file() au format .laz, qui est le format compressé du .las. Une fonction utilisant une API, dans le package `lidR` existait pour récupérer les données mais ce dernier ne fonctionne pas dû à une modification du site géoservice. La solution apportée permet donc de contourner ce problème, mais les liens n'étant pas pérennes, le risque que ceux-ci expirent subsiste.
 
 ```
 download.lidar = function(x1, y1, x2, y2) {
