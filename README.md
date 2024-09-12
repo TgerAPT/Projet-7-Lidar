@@ -1,4 +1,4 @@
-# Projet-7-Lidar                                      
+# Projet-7-cloisonnement-LiDAR                                      
 
 Détection Automatique des Cloisonnements d'Exploitation Forestière 
 
