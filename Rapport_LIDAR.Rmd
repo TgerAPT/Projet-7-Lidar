@@ -254,3 +254,5 @@ Les cloisonnements sont détectés au même titre que des pistes forestières. I
 # Conclusion
 
 La détection des cloisonnements forestiers par LiDAR s'avère être une approche prometteuse pour améliorer la gestion forestière et avoir une trace des cloisonnements. Dans le cadre de ce projet, l'utilisation de la technologie LiDAR couplée à l'analyse sous R et QGIS a permis de produire des cartographies avec des cloisonnements visibles. Les programmes développés lors de ces deux semaines on permis de de produire quelques resultats prometteurs sur des forêts où la densité est faible. A l'inverse, des améliorations sont à apporter concernant les boisements plus denses. Ce projet souligne ainsi l'importance de l'intégration des nouvelles technologies dans la gestion durable des écosystèmes forestiers, permettant une prise de décision plus efficace.
+
+# Références 
