@@ -25,6 +25,8 @@ IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Instit
 ## Origine des données et zone d'étude
 La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz. Pour tester et ajuster le modèle plusieurs forêts de nature variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en montagne et une forêt de feuillus en plaine.
 
+Les programmes on été fait sous R avec Rstudio. Les IA Claude et Chat GPT on été utilisés pour aider au codage des différentes fonctions. Les produits issus des codes peuvent être traités par QGIS avec par exemple des Voronoi dans le but d'améliorer les résultats. 
+
 ## Récupération des données sur R
 ### Packages
 La plus grande partie du travail a été effectué sur Rstudio. Le traitement s'est appuyé sur de nombreuses fonctions déjà disponibles dans des packages adaptés aux données manipulées.\
