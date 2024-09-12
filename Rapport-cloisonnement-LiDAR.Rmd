@@ -109,7 +109,7 @@ Ensuite, deux séquences sont créées : `x` et `y`. Ces séquences sont génér
 
 Partie 2 : Boucles d'itération sur les coordonnées
 
-```r
+```
   for (i in x) {
     for (j in y) {
 ```
@@ -118,7 +118,7 @@ Cette partie met en place deux boucles imbriquées qui vont itérer sur toutes l
 
 Partie 3 : Construction de l'URL pour la requête JSON
 
-```r
+```
       json_url <- paste0("https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=",
                          i, ",", j, ",", i, ",", j)
       print(paste("Fetching JSON from:", json_url))
@@ -128,7 +128,7 @@ Cette section construit l'URL nécessaire pour interroger le service web de donn
 
 Partie 4 : Récupération et traitement des données JSON
 
-```r
+```
       tryCatch({
         json = fromJSON(txt = json_url)
         lien = json[["features"]][["properties"]][["url"]][1]
@@ -141,7 +141,7 @@ Cette partie utilise un bloc `tryCatch` pour gérer les erreurs potentielles lor
 
 Partie 5 : Téléchargement du fichier .laz
 
-```r
+```
           download.file(lien,
                         destfile = paste0("dir", i, "_", j, ".laz"),
                         mode = "wb")
@@ -179,7 +179,7 @@ Après ces différentes étapes un fichier .laz est créé et servira de base po
 
 La fonction `detect.cloiso()` est la fonction principale du code. Le principe est le suivant : plusieurs données sont extraites du fichier d'origine, puis, en attribuant des seuils à ces valeurs, les points sont classés et discriminés si le nombre de critères remplis est suffisant.\
 Le nombre de retours correspond au nombre de fois où le laser a croisé des éléments et a été renvoyé vers l'appareil. A priori un cloisonnement devrait avoir un faible nombre de retour puisque le couvert y est moins important que dans le reste de la parcelle.\
-```{r}
+```
 detect.cloiso <- function(laz, resolution = 1, threshold = 0.1, output_file = "cloisonnements.gpkg") {
   if (is.null(laz) || npoints(laz) == 0) {
     stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
@@ -248,9 +248,108 @@ detect.cloiso <- function(laz, resolution = 1, threshold = 0.1, output_file = "c
 }
 ```
 
+Partie 1 : Définition de la fonction et vérification initiale
+
+```
+detect.cloiso <- function(laz, output_file, resolution = 1, threshold = 0.1) {
+  if (is.null(laz) || npoints(laz) == 0) {
+    stop("Le fichier LAZ est vide ou n'a pas été chargé correctement.")
+  }
+```
+
+Cette partie définit la fonction `detect.cloiso` qui prend quatre paramètres : `laz` (le fichier LiDAR), `output_file` (le nom du fichier de sortie), `resolution` (par défaut 1), et `threshold` (ici choisi à 0,1). La fonction commence par vérifier si le fichier .laz est valide et contient des points. Si ce n'est pas le cas, elle arrête l'exécution avec un message d'erreur.
+
+Partie 2 : Calcul du nombre de retours et création du MNT
+
+```
+  returns <- grid_metrics(laz, ~length(Z), res = resolution / 2)
+  names(returns) <- "num_returns"
+  
+  mnt1 = grid_terrain(laz, res = resolution / 2, algorithm = tin())
+```
+
+Cette section calcule le nombre de retours LiDAR pour chaque cellule de la grille et crée un Modèle Numérique de Terrain (MNT) en utilisant l'algorithme TIN (Triangulated Irregular Network). La résolution utilisée est la moitié de celle spécifiée en paramètre.
+
+Partie 3 : Application du filtre Laplacien
+
+```
+  laplacian_kernel <- matrix(c(1, 1, 1,
+                               1, -8, 1,
+                               1, 1, 1), 
+                             nrow = 3, ncol = 3)
+  
+  mnt_sqrt <- focal(mnt1, w = laplacian_kernel, fun = sum, na.policy = "omit", 
+                    pad = TRUE)
+  names(mnt_sqrt) <- "mnt"
+  norm = normalize_height(laz, mnt1)
+```
+
+Cette partie crée et applique un filtre Laplacien au MNT pour détecter les changements brusques d'élévation. Ensuite, la hauteur des points LiDAR par rapport au MNT est normalisé.
+
+Partie 4 : Création du MNH et combinaison des rasters
+
+```
+  mnh <- grid_canopy(norm, res = resolution / 2, algorithm = pitfree())
+  names(mnh) <- "mnh_height"
+  
+  combined_stack <- raster::stack(returns, mnh, mnt_sqrt)
+  
+  combined_df <- as.data.frame(combined_stack, xy = TRUE)
+  combined_df <- na.omit(combined_df)
+```
+
+Cette section crée un Modèle Numérique de Hauteur (MNH) à partir des données normalisées. Elle combine ensuite tous les rasters créés (retours, MNH, MNT) en un seul, puis convertit ce raster en un dataframe pour faciliter le traitement ultérieur. Les valeurs NA sont supprimées pour éviter des erreurs.
+
+Partie 5 : Détection des zones de cloisonnement
+
+```
+  combined_df$low_returns <- ifelse(combined_df$num_returns < 6, 1, 0)
+  combined_df$low_mnh <- ifelse(combined_df$mnh_height < 3, 1, 0)
+  combined_df$low_mnt <- ifelse(combined_df$mnt < quantile(combined_df$mnt,
+                                                threshold, na.rm = TRUE), 1, 0)
+  
+  combined_df$cloisonnement <- with(combined_df,
+                  (low_returns * 0.33 + low_mnh * 0.33 + low_mnt * 0.33) > 0.65)
+  
+  cloisonnements_points <- combined_df[combined_df$cloisonnement, ]
+```
+
+Cette partie détecte les zones de cloisonnement en appliquant des seuils sur le nombre de retours, la hauteur du MNH et les valeurs du MNT. Elle combine ensuite ces critères avec une pondération pour identifier les zones de cloisonnement potentielles, ces seuils ont été définis de manière empirique.
+
+Partie 6 : Traitement spatial et export
+
+```
+  if (nrow(cloisonnements_points) > 0) {
+    cloisonnements_sf <- st_as_sf(cloisonnements_points, coords = c("x", "y"), 
+                                  crs = st_crs(laz))
+    
+    cloisonnements_buffer <- st_buffer(cloisonnements_sf, dist = resolution)
+    cloisonnements_dissolved <- st_union(cloisonnements_buffer)
+    
+    centerlines_simplified <- st_simplify(cloisonnements_dissolved,
+                                          dTolerance = resolution / 2)
+    
+    cloisonnements_smooth <- st_simplify(centerlines_simplified,
+                                         dTolerance = resolution / 4)
+    
+    st_write(cloisonnements_smooth, output_file, driver = "GPKG",
+             delete_layer = TRUE)
+    message("Cloisonnements exportés vers ", output_file)
+    
+    return(cloisonnements_smooth)
+  } else {
+    message("Aucun cloisonnement détecté.")
+    return(NULL)
+  }
+}
+```
+
+Cette dernière partie traite les points de cloisonnement détectés s'il y en a. Elle les convertit en objet spatial, applique un buffer pour fusionner les géométries proches, simplifie et lisse les lignes résultantes pour obtenir un résultat plus naturel. Enfin, elle exporte le résultat au format GPKG. Si aucun cloisonnement n'est détecté, elle affiche un message et retourne "NULL".
+
+
 ## Détection des cloisonnements sur QGIS
 En plus des tentatives de détection des cloisonnements sur R, une deuxième approche sur QGis a été mise en place.
-L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur et d'une détéction plus précise. De plus certaines fonctions comme Voronoi sont plus simples d'utilisation sur QGis.\
+L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur et d'une détéction plus précise. De plus certaines fonctions comme Voronoi sont plus simples d'utilisation sur QGis (R limitant très fortement la taille des rasters traités).\
 La fin du processus de détection nécessite l'interprétation des vecteurs créés qui est également optimisé par la visualisation sur QGIS.
 
 
