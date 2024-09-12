@@ -52,9 +52,9 @@ draw.area = function(){
 ```
 Une fois la zone dessinée les coordonnées du coin bas gauche et haut droit sont retenues.\
 \
-L'étape d'après consiste à télécharger les tuiles de l'IGN correspondant à la zone d'étude. Cette étape s'appuie sur l'utilisation du package jsonlite qui cherche la source de données et extrait le fichier au format .laz. *autre api marche pas ? + qu'en est-il de serveurs pas stables*
+L'étape d'après consiste à télécharger les tuiles de l'IGN correspondant à la zone d'étude. Cette étape s'appuie sur l'utilisation du package jsonlite qui cherche la source de données et extrait le fichier au format .laz. Un API du package `lidR` existait pour récupérer les données mais ce dernier ne fonctionnait pas. La solution apportée permet donc de contourner ce problème, mais les liens n'étant pas pérennes le risque que ceux-ci expirent subsiste.
 
-```{r}
+```
 download.lidar = function(x1, y1, x2, y2) {
   # Créer une séquence de coordonnées avec un pas de 10000
   x = seq(x1, x2, 10000)
@@ -95,14 +95,84 @@ download.lidar = function(x1, y1, x2, y2) {
   }
 }
 ```
+Partie 1 : Définition de la fonction et création des séquences
 
+```r
+download.lidar = function(x1, y1, x2, y2) {
+  x = seq(x1, x2, 10000)
+  y = seq(y1, y2, 10000)
+```
+
+Cette partie définit la fonction `download.lidar` qui prend quatre paramètres : `x1`, `y1`, `x2`, et `y2`. Ces paramètres représentent les coordonnées des coins opposés de la zone géographique pour laquelle nous voulons obtenir des données LiDAR.
+
+Ensuite, deux séquences sont créées : `x` et `y`. Ces séquences sont générées à partir des paramètres d'entrée, avec un pas de 10000 unités. Cela permet de diviser la zone géographique en une grille de points espacés de 10000 unités, qui seront utilisés pour interroger le service web de données LiDAR.
+
+Partie 2 : Boucles d'itération sur les coordonnées
+
+```r
+  for (i in x) {
+    for (j in y) {
+```
+
+Cette partie met en place deux boucles imbriquées qui vont itérer sur toutes les combinaisons possibles de coordonnées `x` et `y`. Chaque itération représente un point spécifique de la grille créée précédemment. Ces boucles permettent de parcourir systématiquement l'ensemble de la zone géographique définie.
+
+Partie 3 : Construction de l'URL pour la requête JSON
+
+```r
+      json_url <- paste0("https://data.geopf.fr/private/wfs/?service=WFS&version=2.0.0&apikey=interface_catalogue&request=GetFeature&typeNames=IGNF_LIDAR-HD_TA:nuage-dalle&outputFormat=application/json&bbox=",
+                         i, ",", j, ",", i, ",", j)
+      print(paste("Fetching JSON from:", json_url))
+```
+
+Cette section construit l'URL nécessaire pour interroger le service web de données géographiques. L'URL est créée en utilisant les coordonnées actuelles (`i` et `j`) et inclut divers paramètres tels que le type de service, la version, la clé API, et le format de sortie souhaité (JSON). La fonction affiche ensuite l'URL construite, ce qui peut être utile pour le débogage ou le suivi du processus.
+
+Partie 4 : Récupération et traitement des données JSON
+
+```r
+      tryCatch({
+        json = fromJSON(txt = json_url)
+        lien = json[["features"]][["properties"]][["url"]][1]
+        
+        if (!is.null(lien)) {
+          print(paste("Downloading .laz file from:", lien))
+```
+
+Cette partie utilise un bloc `tryCatch` pour gérer les erreurs potentielles lors de la récupération des données JSON. La fonction tente de récupérer les données JSON à partir de l'URL construite précédemment. Si la requête réussit, elle extrait l'URL du fichier .laz correspondant aux coordonnées actuelles. Si une URL valide est trouvée, la fonction affiche un message indiquant qu'elle va commencer le téléchargement du fichier .laz.
+
+Partie 5 : Téléchargement du fichier .laz
+
+```r
+          download.file(lien,
+                        destfile = paste0("dir", i, "_", j, ".laz"),
+                        mode = "wb")
+          
+          print(paste("Saved file:", paste0(i, "_", j, ".laz")))
+        } else {
+          print("No valid link found in the JSON response.")
+        }
+      }, error = function(e) {
+        print(paste("Error fetching or downloading data for bbox:", i, j))
+        print(e)
+      })
+    }
+  }
+}
+```
+
+Cette dernière partie gère le téléchargement effectif du fichier .laz. Si une URL valide a été trouvée, la fonction utilise `download.file` pour télécharger le fichier, en spécifiant le mode binaire ("wb") pour assurer l'intégrité des données. Le fichier est sauvegardé avec un nom basé sur les coordonnées actuelles.
+
+Si aucun lien valide n'est trouvé dans la réponse JSON, un message d'erreur est affiché. De même, si une erreur se produit à n'importe quel moment pendant la récupération des données ou le téléchargement, la fonction affiche un message d'erreur et l'erreur elle-même, puis continue avec la paire de coordonnées suivante.
+
+Cette structure permet à la fonction de traiter systématiquement une grande zone géographique, en gérant les erreurs de manière à ce que le processus global ne soit pas interrompu par des problèmes ponctuels.\
+\
 Une fois les tuiles récupérées, elles ne peuvent pas être traitées en l'état du fait de leur taille (Georges-Leroy et al., 2014). L'emprise est donc ramenée à la valeur spécifiée au début par l'utilisateur.
-```{r}
+```
 cut.area = function(laz, liste){
   clip = clip_rectangle(laz, liste[1], liste[2], liste[3], liste[4])
   return(clip)
 }
 ```
+
 Après ces différentes étapes un fichier .laz est créé et servira de base pour les différents traitements.
 
 ## Détection des cloisonnements sur R
