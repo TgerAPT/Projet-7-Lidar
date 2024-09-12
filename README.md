@@ -13,7 +13,7 @@ Le but de ce projet est de développer un outil automatisé capable de détecter
 Ce projet se caractérise par son approche exploratoire dans le domaine de la télédétection forestière. En utilisant des programmes R pour automatiser la détection des cloisonnements d'exploitation.
 
 Le Github est organisé de manière suivante :
- - Le dossier "Function" contenant les fonctions développées par notre groupe comme le téléchargement automatique du LiDAR.
+ - Le dossier "Functions" contenant les fonctions développées par notre groupe comme le téléchargement automatique du LiDAR.
  - Le dossier "Sandbox" nous servant de corbeille pour supprimer les scripts de manière non définitive
  - le gitignore qui définit les types de fichier non stockés sur le git.
  - le readme (là où vous êtes actuellement)
