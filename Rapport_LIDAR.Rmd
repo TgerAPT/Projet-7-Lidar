@@ -23,11 +23,11 @@ IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Institut
 
 # Matériel et Méthode
 ## Origine des données et zone d'étude
-La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz. Pour tester et ajuster le modèle plusieurs forêts de nature variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en montagne et une forêt de feuillus en plaine.
+La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz *(Figure 1)*. Pour tester et ajuster le modèle plusieurs forêts de nature variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en montagne et une forêt de feuillus en plaine.
 
 
-```{r, echo=FALSE}
-knitr::include_graphics("https://drive.google.com/uc?export=view&id=1KBIgPd05gYWKF0e0Icea6pGEWomStboI")
+```{r, echo = FALSE, fig.cap = "Figure 1 : Fichier Las de la zone en Somme", fig.align = 'center'}
+knitr::include_graphics("https://drive.google.com/uc?export=view&id=184i28akKdegkB3oIzVIXx5SZhFLdy9Zx")
 ```
 
 Les programmes on été fait sous R avec Rstudio. Les IA Claude et Chat GPT on été utilisés pour aider au codage des différentes fonctions. Les produits issus des codes peuvent être traités par QGIS avec par exemple des Voronoi dans le but d'améliorer les résultats. 
@@ -151,7 +151,30 @@ download.lidar(coord[1],coord[2],coord[3],coord[4])
 
 
 ```
+### Détection des cloisonnements
 
+L’application de la fonction `detect.cloiso()` sur les différentes zones étudiées *(Figure2)* montre des résultats très hétérogènes. L’ajustement ayant été en grande partie réalisée sur la zone en Somme, c’est sur cette dernière que l’interprétation est la plus simple. Les zones de plus haute densité ne permettent généralement pas de détecter des cloisonnements et au contraire les routes et pistes plus larges sont détectées au même titre que les cloisonnements.
+La couche obtenu est exporté vers QGis pour être interprétée directement par le gestionnaire. Les cloisonnements sont les lignes fines, régulièrement espacée et parallèles. 
+
+```{r, echo=FALSE, fig.cap = "Figure 2 : Application de la fonction detect.cloiso() sur les trois zones d'étude. De gauche à droite : Forêt du PNR Haut Languedoc, Forêt de Creuse dans la Somme, Forêt de résineux dans les landes"}
+knitr::include_graphics("https://drive.google.com/uc?export=view&id=1KBIgPd05gYWKF0e0Icea6pGEWomStboI")
+```
+
+### Transformation de Voronoi
+
+En plus de l'affichage précédent, une transformation peut être appliquée sur QGIS : la transformation de Voronoi (*Figure 3*) qui transforme les formes détectées en ligne en regroupant des points voisins de même nature. Les lignes de cloisonnements sont alors plus lisibles et le bruit réduit.
+
+```{r, echo=FALSE, fig.cap = "Figure 3 : Transformation de Voronoi sur les trois zones d'étude. De gauche à droite : Forêt du PNR Haut Languedoc, Forêt de Creuse dans la Somme, Forêt de résineux dans les landes"}
+knitr::include_graphics("https://drive.google.com/uc?export=view&id=173Vl3-aLCg7mSSnTUHI6ER6GRM-RoraM ")
+```
+
+### Comparaison des méthodes
+
+Avant d'aboutir à cette méthode, d'autres ont été explorées *(Figure 4)*. Le calcul du MNT permet dans certains cas de faire apparaître les cloisonnements par une faible différence de hauteur *référence des allemands* mais nécessite une précision très importante, un choix d'ombrage bien ajusté et un terrain relativement régulier. Pour améliorer cette méthode, le calcul de la dérivée seconde du MNT (Edge detection) *référence baguette* permet de faire ressortir les variations locales d'altitude telles que des bordures de routes et de cloisonnements. Enfin la méthode retenue dans ce projet prend en compte le nombre de retour et le MNH en plus de l'Edge detection.
+
+```{r,  echo=FALSE, fig.cap = "Figure 4 : Comparaison des trois méthodes de détection appliquées sur la Forêt de Creuse dans la Somme. De gauche à droite : MNT, Edge detection, detect.cloiso + Voronoi"}
+knitr::include_graphics("https://drive.google.com/uc?export=view&id=1FHLn--pQmdhgkXVDOFPIzlp8K7YxAUMf ")
+```
 
 
 # Discussion
