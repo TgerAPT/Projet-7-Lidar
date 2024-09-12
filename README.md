@@ -6,6 +6,7 @@ Détection Automatique des Cloisonnements d'Exploitation Forestière
   <img src="https://github.com/user-attachments/assets/fb95f6e5-aeac-4f22-aede-0a3bd7293cf2" >
 </p>
 
+<p align="justify"> 
 Bienvenue dans le projet de détection automatique des cloisonnements d'exploitation forestière développé dans le cadre de notre projet de troisième année d'ingénieur à AgroParisTech spécialisée en gestion forestière. Ce projet utilise le langage de programmation R ainsi que le logiciel QGIS pour identifier et analyser les zones de cloisonnement d'exploitations forestières à partir de données géospatiales et LiDAR. Le LiDAR (Light Detection and Ranging) est une technologie de télédétection qui utilise des impulsions lumineuses pour mesurer les distances et créer des modèles détaillés de la surface terrestre qui permet donc de modeliser les arbres mais également le sol.
 
 Le but de ce projet est de développer un outil automatisé capable de détecter les cloisonnements d'exploitation forestière. En utilisant des techniques de traitement d'images et d'analyse de données géospatiales en R, ce projet vise à améliorer l'efficacité des tâches de gestion forestière en fournissant une méthode précise et automatisée pour identifier les zones de cloisonnement.
@@ -21,3 +22,4 @@ Le Github est organisé de manière suivante :
  - Le Projet7_lidar qui est le script final
 
 Ce projet est réalisé par Tristan ARMANGE, Thomas GERVAL, Mathieu MAGNIER, Gabriel MARIE en septembre 2024.
+</p>
