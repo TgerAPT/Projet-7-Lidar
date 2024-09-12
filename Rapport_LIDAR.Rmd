@@ -14,10 +14,10 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 # Introduction
 
-Les cloisonnements sont des outils sylvicoles important pour lutter contre le tassement des sols et préserver la productivité des sols forestiers. En effet, en fonction de la texture su sol, le tassement peut être plus ou moins important lors du passage des engins et ainsi réduire la porosité et donc la réserve utile en eau du sol. Cependant, il n’existe pas de carte accessible de ces cloisonnements lorsqu’ils existent. Ceux-ci peuvent alors être perdus avec le temps. L’utilisation du LiDAR (Light Detection And Ranging) semble être une solution. Le LiDAR consiste en une mesure de distance par détection de la lumière *(IGN, 2021)*. Actuellement, en France un projet de LiDAR (LiDAR HD), vise à cartographier l’ensemble du territoire avec une haute densité (10 points par m²) *(IGN, 2021)*, pour le moment 2/3 du territoire a été survolé. Ainsi cela mène à la question de : Comment déterminer les cloisonnements grâce à des données LiDAR.
+Les cloisonnements sont des outils sylvicoles important pour lutter contre le tassement des sols forestiers et préserver leur productivité. En effet, en fonction de la texture su sol, le tassement peut être plus ou moins important lors du passage des engins et ainsi réduire la porosité et donc la réserve utile en eau du sol. Cependant, il n’existe pas de carte accessible de ces cloisonnements lorsqu’ils existent. Ceux-ci peuvent alors être perdus avec le temps. L’utilisation du LiDAR (Light Detection And Ranging) semble être une solution. Le LiDAR consiste en une mesure de distance par détection de la lumière *(IGN, 2021)*. Actuellement, en France un projet de LiDAR (LiDAR HD), vise à cartographier l’ensemble du territoire avec une haute densité (10 points par m²) *(IGN, 2021)*, pour le moment 2/3 du territoire a été survolé. Ainsi cela mène à la question suivante : Comment déterminer les cloisonnements grâce à des données LiDAR ?
 
-IGN. 2021. Lidar aéroporté : des mesures de précision - Institut - IGN. https://www.ign.fr/institut/kiosque/lidar-aeroporte-des-mesures-de-precision (Consulté le 10 septembre 2024). 
-IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Institut - IGN. https://www.ign.fr/institut/lidar-hd-vers-une-nouvelle-cartographie-3d-du-territoire (Consulté le 10 septembre 2024). 
+IGN. 2021. Lidar aéroporté : des mesures de précision - Institut - IGN. https://www.ign.fr/institut/kiosque/lidar-aeroporte-des-mesures-de-precision (Consulté le 10 septembre 2024). 
+IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Institut - IGN. https://www.ign.fr/institut/lidar-hd-vers-une-nouvelle-cartographie-3d-du-territoire (Consulté le 10 septembre 2024). 
 
 
 
@@ -25,9 +25,13 @@ IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Instit
 ## Origine des données et zone d'étude
 La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz. Pour tester et ajuster le modèle plusieurs forêts de nature variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en montagne et une forêt de feuillus en plaine.
 
+
 ```{r, echo=FALSE}
 knitr::include_graphics("https://drive.google.com/uc?export=view&id=1KBIgPd05gYWKF0e0Icea6pGEWomStboI")
 ```
+
+Les programmes on été fait sous R avec Rstudio. Les IA Claude et Chat GPT on été utilisés pour aider au codage des différentes fonctions. Les produits issus des codes peuvent être traités par QGIS avec par exemple des Voronoi dans le but d'améliorer les résultats. 
+
 
 ## Récupération des données sur R
 ### Packages
@@ -35,7 +39,6 @@ La plus grande partie du travail a été effectué sur Rstudio. Le traitement s'
 Le package principal est `lidR` *David Auty* qui permet de réaliser de nombreuses opérations sur les fichiers LiDAR. Afin de passer de ces fichiers 3D à un format 2D adaptée à la cartographie on utilise la fonction `lidR::rasterize()` puis le package `terra`*Robert Hijmans* permet de réaliser des opérations sur les rasters ainsi créés.
 
 ```{r, include = FALSE}
-library(happign)
 library(sf)  # for vector
 library(tmap); tmap_mode("view")  # Set map to interactive
 library(dplyr)
@@ -111,7 +114,7 @@ download.lidar = function(x1, y1, x2, y2) {
 }
 ```
 
-Une fois les tuiles récupérées, elle ne peuvent être traitées en l'état car bien trop lourdes (emprise de 10 kha). L'emprise est donc ramenée à la valeur spécifiée au début par l'utilisateur.
+Une fois les tuiles récupérées, elles ne peuvent pas être traitées en l'état du fait de leur taille (emprise de 10 kha). L'emprise est donc ramenée à la valeur spécifiée au début par l'utilisateur.
 ```{r}
 cut.area = function(laz, liste){
   clip = clip_rectangle(laz, liste[1], liste[2], liste[3], liste[4])
@@ -122,8 +125,8 @@ Après ces différentes étapes un fichier .laz est créé et servira de base po
 
 ## Détection des cloisonnements sur R
 
-La fonction `detect.cloiso()` est la fonction principale du code. Le principe est le suivant : plusieurs données sont extraites du fichier d'origine puis en attribuant des seuils à ces valeurs, les points sont classés et discriminés si le nombre de critères remplis est suffisant.\
-Le nombre de retours correspond au nombre de fois ou le laser a croisé des éléments et été réfléchi. A priori un cloisonnement devrait avoir un faible nombre de retour puisque le couvert y est moins important que dans le reste de la parcelle.\
+La fonction `detect.cloiso()` est la fonction principale du code. Le principe est le suivant : plusieurs données sont extraites du fichier d'origine, puis, en attribuant des seuils à ces valeurs, les points sont classés et discriminés si le nombre de critères remplis est suffisant.\
+Le nombre de retours correspond au nombre de fois où le laser a croisé des éléments et a été renvoyé vers l'appareil. A priori un cloisonnement devrait avoir un faible nombre de retour puisque le couvert y est moins important que dans le reste de la parcelle.\
 ```{r}
 
 ```
@@ -131,13 +134,13 @@ Le nombre de retours correspond au nombre de fois ou le laser a croisé des él�
 
 ## Détection des cloisonnements sur QGIS
 En plus des tentatives de détection des cloisonnements sur R, une deuxième approche sur QGis a été mise en place.
-L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur. De plus certaines fonctions comme Voronoi sont plus simple d'utilisation sur QGis.\
+L'automatisation est alors abandonnée au profit de l'adaptabilité d'un opérateur et d'une détéction plus précise. De plus certaines fonctions comme Voronoi sont plus simple d'utilisation sur QGis.\
 La fin du processus de détection nécessite l'interprétation des vecteurs créés qui est également optimisé par la visualisation sur QGIS.
 
 
 # Résultats
 
-Le code ci-après a été amputé de la partrie drawfeature pour présenter les zones d'étude
+Le code ci-après a été amputé de la partrie drawfeature pour présenter les zones d'étude.
 ```
 coord <- draw.area()
 ```
@@ -154,8 +157,12 @@ download.lidar(coord[1],coord[2],coord[3],coord[4])
 # Discussion
 
 La principale contrainte relative à ces données est leur taille importante. Il est pour l'instant inenvisageable de travailler à l'échelle de massifs forestiers entiers.\
-A l'heure actuelle la détection des cloisonnements a été testée sur des morceaux de forêts de différentes natures(plantations ou non, feuillus ou résineux, peuplements âgés ou jeunes,...) sans pour autant être exhaustive. Une étude supplémentaire serait nécessaire pour déterminer les facteurs nécessaires à une détection de qualité. Pour l'instant l'absence de détection n'exclue pas la présence des cloisonnements.\
+A l'heure actuelle la détection des cloisonnements a été testée sur des morceaux de forêts de différentes natures (plantations ou non, feuillus ou résineux, peuplements âgés ou jeunes,...) sans pour autant être exhaustive. Une étude supplémentaire serait nécessaire pour déterminer les facteurs nécessaires à une détection de qualité. Pour l'instant l'absence de détection n'exclue pas la présence des cloisonnements.\
 En plus des cloisonnements actuels, une approche supplémentaire sur la présence d'anciens cloisonnements ou passage de véhicules serait une information importante à donner au gestionnaire.\
+Il a également été remarqué que ce programme ne fonctionne pas pour détécter les
+cloisonnements lorsque la densité de couvert est trop élevée, un autre projet
+pour adapter ce programme aux différents contexte forestier pourrait donc être
+envisagé.
 *mentionner le travail à l'echelle du terrain ou les cloiso sont deja visibles = quel interet à l'approche aerienne si on ne peut pas visualiser des grands ensembles.*
 Les cloisonnements sont détectés au même titre que des pistes forestières. Il faudrait ajouter un traitement permettant de les discriminer. De même la détection s'accompagne de nombreuses formes superflues ne correspondant pas aux cloisonnements. Ce bruit pourrait être retiré en complexifiant les fonctions.
 
