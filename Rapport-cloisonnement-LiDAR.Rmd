@@ -29,7 +29,7 @@ knitr::include_graphics("https://drive.google.com/uc?export=view&id=184i28akKdeg
 ## Récupération des données sur R
 ### Packages
 La plus grande partie du travail a été effectué sur Rstudio. Le traitement s'est appuyé sur de nombreuses fonctions déjà disponibles dans des packages adaptés aux données manipulées.\
-Le package principal est [`lidR`](https://github.com/r-lidar/lidR) qui permet de réaliser de nombreuses opérations sur les fichiers LiDAR. Afin de passer de ces fichiers 3D à un format 2D adaptée à la cartographie on utilise la fonction `lidR::rasterize()` puis le package [`terra`](https://github.com/rspatial/terra) R permet de réaliser des opérations sur les rasters ainsi créés.
+Le package principal est [`lidR`](https://github.com/r-lidar/lidR) qui permet de réaliser de nombreuses opérations sur les fichiers LiDAR. Afin de passer de ces fichiers 3D à un format 2D adaptée à la cartographie, on utilise la fonction `lidR::rasterize()`, puis le package [`terra`](https://github.com/rspatial/terra), R permet de réaliser des opérations sur les rasters ainsi créés.
 
 ### Chemin d'accès 
 Une première manipulation simple permet d'automatiser les chemins d'accès de l'utilsateurs et éviter des erreurs de lecture par la suite : 
