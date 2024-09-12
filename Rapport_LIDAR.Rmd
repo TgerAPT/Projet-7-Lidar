@@ -24,6 +24,7 @@ IGN. 2021. LiDAR HD : vers une nouvelle cartographie 3D du territoire - Instit
 # Matériel et Méthode
 ## Origine des données et zone d'étude
 La base de données de l'IGN offre en libre accès les données issues de ses survols LiDAR. Ces nuages de points possèdent de nombreux paramètres : coordonnées spatiales (X, Y, Z) et temporelle, intensité et nombre de retours, etc... Les fichiers sont de types .las ou .laz. Pour tester et ajuster le modèle plusieurs forêts de nature variées ont été testées. Au final 3 forêts ont été retenus pour montrer les réussites et limites du modèle : une plantation de pin dans les landes, une forêt de feuillus en montagne et une forêt de feuillus en plaine.
+![Photos aériennes des trois zones d'étude](https://drive.google.com/file/d/1KBIgPd05gYWKF0e0Icea6pGEWomStboI/view?usp=sharing)
 
 ## Récupération des données sur R
 ### Packages
@@ -31,17 +32,16 @@ La plus grande partie du travail a été effectué sur Rstudio. Le traitement s'
 Le package principal est `lidR` *David Auty* qui permet de réaliser de nombreuses opérations sur les fichiers LiDAR. Afin de passer de ces fichiers 3D à un format 2D adaptée à la cartographie on utilise la fonction `lidR::rasterize()` puis le package `terra`*Robert Hijmans* permet de réaliser des opérations sur les rasters ainsi créés.
 
 ```{r, include = FALSE}
-library(dplyr)  # Manipulation de données tabulée  [*auteurs*](https://dplyr.tidyverse.org/authors.html#citation)
-library(ggplot2)  # Création de graphiques *Hadley Wickham*
-library(happign)  # Récupération de données IGN *Paul Carteron*
-library(jsonlite)  # Lecture de données JSON *Jeroen Ooms*
-library(lidR)  # Manipulation des données LiDAR *David Auty*
-library(mapedit) # outil drawfeatures
-library(purrr)  # Outils de programmation fonctionnelle [*auteurs*](https://purrr.tidyverse.org/authors.html#citation)
-library(sf); sf_use_s2(FALSE)  # Manipulation des vecteurs géospatialisés *Edzer Pebesma* avec correction des erreurs de géométrie sphérique
-library(stars)  # Manipulation de tables de données spatialisées *Data cubes* *Edzer Pebesma*
-library(terra)  #Manipulation de données spatialisées *Robert Hijmans*
-library(tmap); tmap_mode("view")  # Création de cartes dynamiques *Martijn Tennekes*
+library(happign)
+library(sf)  # for vector
+library(tmap); tmap_mode("view")  # Set map to interactive
+library(dplyr)
+library(ggplot2);sf_use_s2(FALSE)  # Avoid problem with spherical geometry
+library(purrr)
+library(stars)
+library(terra)  # for raster
+library(jsonlite)  # to manipulate .json
+library(lidR)
 ``` 
 
 ### Chemin d'accès 
@@ -51,7 +51,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 dir <- getwd()
 ```
 
-###Extraction des données
+### Extraction des données
 La première étape consiste à récupérer les coordonnées de la zone étudiée. L'utilisation de la fonction drawFeatures() du package mapedit permet de demander à l'utilsateur d'encadrer directement sur une carte interactive la zone souhaitée. La zone doit impérativement faire partie des zones couvertes par LiDAR HD.
 ```{r}
 draw.area = function(){
